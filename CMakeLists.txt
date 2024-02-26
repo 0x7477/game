@@ -1,0 +1,25 @@
+cmake_minimum_required(VERSION 3.25.2)
+project(game)
+
+set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_FLAGS "-Wall -Werror -Wpedantic -O3 -march=native -g")
+
+file(GLOB_RECURSE src src/**.cpp)
+
+list(FILTER src EXCLUDE REGEX "server_main.cpp$")
+list(FILTER src EXCLUDE REGEX "client_main.cpp$")
+list(FILTER src EXCLUDE REGEX "generator_main.cpp$")
+
+add_library(${PROJECT_NAME}_lib ${src})
+
+add_executable(${PROJECT_NAME} src/generator_main.cpp)
+add_executable(server src/server_main.cpp)
+add_executable(client src/client_main.cpp)
+
+
+target_link_libraries(${PROJECT_NAME}_lib png uv)
+target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_lib)
+target_link_libraries(server ${PROJECT_NAME}_lib)
+target_link_libraries(client ${PROJECT_NAME}_lib)
+
+include_directories(include)
