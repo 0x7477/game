@@ -6,6 +6,7 @@
 #include <span>
 #include <cstring>
 #include <iostream>
+#include <vector>
 namespace network
 {
     typedef uint16_t message_length_t;
@@ -14,30 +15,30 @@ namespace network
     class SerializedDatagram
     {
     public:
-        explicit SerializedDatagram(const std::string_view &data) : string{data} {}
-        operator std::string() const
-        {
-            return string;
-        }
-
-        operator std::string_view() const
-        {
-            return {string};
-        }
-
-        std::size_t size() const
-        {
-            return string.size();
-        }
-
-        const char *data() const
-        {
-            return string.data();
-        }
+        explicit SerializedDatagram(const std::string_view &data);
+        operator std::string() const;
+        operator std::string_view() const;
+        std::size_t size() const;
+        const char *data() const;
 
     private:
         std::string string;
     };
+
+
+    template<typename T, typename = void>
+    struct HasDeserialize : std::false_type {};
+
+    template<typename T>
+    struct HasDeserialize<T, decltype(&T::deserialize, void())> : std::true_type {};
+
+
+    template<typename T, typename = void>
+    struct HasSerialize : std::false_type {};
+
+    template<typename T>
+    struct HasSerialize<T, decltype(&T::serialize, void())> : std::true_type {};
+
     template <typename element>
     typename std::enable_if<std::is_trivially_copyable<element>::value>::type
     deserialize_element(std::string_view &buffer, const element &value)
@@ -46,20 +47,15 @@ namespace network
         buffer.remove_prefix(sizeof(value));
     }
 
-    void deserialize_element(std::string_view &buffer, char *&string)
-    {
-        const vector_length_t length = *(vector_length_t *)buffer.data();
-        string = new char[length];
-        std::memcpy(string, buffer.data(), length);
-        buffer.remove_prefix(length + sizeof(vector_length_t));
-    }
+    void deserialize_element(std::string_view &buffer, char *&string);
 
-    void deserialize_element(std::string_view &buffer, std::string &string)
+    void deserialize_element(std::string_view &buffer, std::string &string);
+
+    template <typename T>
+    typename std::enable_if<HasDeserialize<T>::value>::type
+    deserialize_element(std::string_view &buffer, T &value)
     {
-        const vector_length_t length = *(vector_length_t *)buffer.data();
-        buffer.remove_prefix(sizeof(vector_length_t));
-        string = std::string{buffer.data(), (std::size_t)length};
-        buffer.remove_prefix(length);
+        T::deserialize(buffer, value);
     }
 
     template <typename element>
@@ -105,25 +101,9 @@ namespace network
             buffer.push_back(data_ptr[i]);
     }
 
-    void serialize_element(std::vector<char> &buffer, const char *string)
-    {
-        assert(strlen(string) <= std::numeric_limits<vector_length_t>::max());
-        const vector_length_t length = (vector_length_t)strlen(string);
-        buffer.push_back(length);
+    void serialize_element(std::vector<char> &buffer, const char *string);
 
-        for (vector_length_t i{0u}; i < length; i++)
-            buffer.push_back(string[i]);
-    }
-
-    void serialize_element(std::vector<char> &buffer, const std::string &string)
-    {
-        assert(string.size() <= std::numeric_limits<vector_length_t>::max());
-        const vector_length_t length = (vector_length_t)string.size();
-        serialize_element(buffer, length);
-
-        for (vector_length_t i{0u}; i < length; i++)
-            serialize_element(buffer, string[i]);
-    }
+    void serialize_element(std::vector<char> &buffer, const std::string &string);
 
     template <typename element>
     typename std::enable_if<std::is_array<element>::value>::type
@@ -136,6 +116,16 @@ namespace network
         for (vector_length_t i{0u}; i < length; i++)
             serialize_element(buffer, value[i]);
     }
+
+    template <typename T>
+    typename std::enable_if<HasSerialize<T>::value>::type
+    serialize_element(std::vector<char> &buffer, const T &value)
+    {
+        T::serialize(buffer, value);
+    }
+
+
+
 
     template <typename T>
     void serialize_element(std::vector<char> &buffer, const std::vector<T> &value)
@@ -187,8 +177,8 @@ namespace network
         serialize(std::vector<char> &buffer) const {}
 
         template <std::size_t I = 0>
-            inline typename std::enable_if < I<sizeof...(Args), void>::type
-                                             serialize(std::vector<char> &buffer) const
+        inline typename std::enable_if < I<sizeof...(Args), void>::type
+        serialize(std::vector<char> &buffer) const
         {
             serialize_element(buffer, std::get<I>(data));
             serialize<I + 1>(buffer);
@@ -206,10 +196,16 @@ namespace network
             print<I + 1>();
         }
 
-        template <size_t N = 0>
-        auto get() const
+        template <std::size_t N = 0>
+        auto& get() const
         {
             return std::get<N>(data);
+        }
+
+                
+        auto& getData() const
+        {
+            return data;
         }
 
     private:

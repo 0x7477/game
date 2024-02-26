@@ -6,8 +6,15 @@
 #include <cstring>
 #include <source_location>
 #include "datagram.hpp"
+#include <optional>
+#include <type_traits>
+#include <any>
+#include <vector>
+
 namespace network
 {
+    inline std::map<unsigned int, std::vector<std::any>> synced_objects;
+
     typedef uint32_t rpc_message_length_t;
     typedef uint32_t rpc_id_t;
     namespace RPCTarget
@@ -23,9 +30,9 @@ namespace network
     class RPCBase
     {
     public:
-        RPCBase() {}
-        virtual void rpc(const std::string_view &data){};
-        virtual rpc_id_t getID(const std::source_location location = std::source_location::current()) const { return 0; };
+        constexpr RPCBase(){};
+        virtual std::optional<SerializedDatagram> rpc(const std::string_view &data);
+        // virtual rpc_id_t getID() const;
     };
     inline std::map<std::size_t, RPCBase *> rpcs;
 
@@ -35,27 +42,47 @@ namespace network
         rpc_id_t rpc_id;
         RPCTarget::RPCTarget target;
     };
-    template <class input = Datagram<>, auto execution = [](const input &) {}, typename output = void >
+
+    template <class input = Datagram<>, auto execution = [](const input &) -> std::optional<SerializedDatagram>
+              { return {}; },
+              typename response = void>
     class RPC : public RPCBase
     {
     public:
-        RPC()
+        constexpr RPC()
         {
-            std::cout << getID() <<"\n";
+            std::cout << this << " " << getID() << "\n";
             rpcs[getID()] = this;
+
+            if constexpr (!std::is_same<response, void>::value)
+            {
+                response *res = new response();
+                rpcs[response::getID()] = res;
+            }
         }
-        output rpc(const std::string_view &data) override
+
+        std::optional<SerializedDatagram> rpc(const std::string_view &data) override
         {
+            using return_type = typename std::result_of<decltype(execution)(input)>::type;
+
             input dgram{SerializedDatagram{data}};
-            return execution(dgram);
+            if constexpr (std::is_same<return_type, void>::value)
+            {
+                execution(dgram);
+                return {};
+            }
+            else
+            {
+                const auto serialized_response = execution(dgram);
+                const SerializedDatagram serialized_datagram{response::serialize(RPCTarget::Client, serialized_response)};
+                return {serialized_datagram};
+            }
         };
 
-        constexpr rpc_id_t getID(const std::source_location location = std::source_location::current()) const override
+        static constexpr rpc_id_t getID()
         {
-            const std::string name{location.function_name()};
-
-            std::cout << name << "\n";
-            const auto hash{std::hash<std::string>{}(name )};
+            const std::string name{typeid(RPC<input, execution, response>).name()};
+            const auto hash{std::hash<std::string>{}(name)};
             return hash;
         }
 
@@ -64,10 +91,8 @@ namespace network
             return serialize();
         }
 
-        std::string serialize(const RPCTarget::RPCTarget &target, const input &dgram) const
+        static std::string serialize(const RPCTarget::RPCTarget &target, const SerializedDatagram &data)
         {
-            const std::string data{dgram.serialize()};
-
             std::vector<char> message;
             const rpc_message_length_t message_size{(rpc_message_length_t)(sizeof(RPCPacketHeader) + data.size())};
             message.reserve(message_size);
@@ -81,6 +106,40 @@ namespace network
             std::memcpy(header + 1, data.data(), data.size());
             return std::string(message.data(), message_size);
         }
+
+        static std::string serialize(const RPCTarget::RPCTarget &target, const input &dgram)
+        {
+            return serialize(target, dgram.serialize());
+        }
     };
+
+    template <typename T>
+    class Synced;
+
+    template <std::size_t N, typename Tuple, typename Func, std::size_t... Is>
+    void tupleToArgsHelper(const Tuple &t, Func &&f, std::index_sequence<Is...>)
+    {
+        f(std::get<N + Is>(t)...);
+    }
+
+    template <std::size_t N = 0, typename Tuple, typename Func>
+    void tupleToArgsHelper(const Tuple &t, Func &&f)
+    {
+        constexpr std::size_t tuple_size = std::tuple_size_v<Tuple>;
+        tupleToArgsHelper<N>(t, std::forward<Func>(f), std::make_index_sequence<tuple_size - N>{});
+    }
+
+    template <typename Member, auto function, typename... Args>
+    class RPC<network::Datagram<unsigned int, unsigned int, Args...>,
+              [](const network::Datagram<unsigned int, unsigned int, Args...> &data)
+              {
+                  auto &objects_list = network::synced_objects[std::get<0>(data.getData())];
+                  auto &any = objects_list[std::get<1>(data.getData())];
+                  network::Synced<Member> *member_pointer = std::any_cast<network::Synced<Member> *>(any);
+
+                  tupleToArgs<2>(data.getData(), [&member_pointer](auto &&...args)
+                              { member_pointer->t.function(std::forward<decltype(args)>(args)...); });
+              }>
+        MemberRPC;
 
 }

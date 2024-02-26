@@ -3,8 +3,10 @@
 
 #include <network/rpcs/echo.hpp>
 #include <network/rpcs/add_one.hpp>
-#include "test.hpp"
 #include <network/network_manager.hpp>
+#include <network/synced.hpp>
+
+#include "game.hpp"
 
 int main(int argc, char **argv)
 {
@@ -12,6 +14,7 @@ int main(int argc, char **argv)
     network::NetworkManager manager{server};
 
     server.start();
+
     server.runEventLoop();
 
     return 0;

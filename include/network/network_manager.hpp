@@ -10,110 +10,46 @@
 #include <ranges>
 #include "rpcs/echo.hpp"
 
-static inline network::RPC<network::Datagram<>,[](const network::Datagram<>& data){std::cout << "data.get<0>()" << "\n";}>get_client_id;
-
 namespace network
 {
+    class NetworkManager;
+    inline NetworkManager *network_manager{nullptr};
+
     class NetworkManager
     {
     public:
-        NetworkManager(Server &interface)
-            : interface{interface}, id{0}
-        {
-            init();
-            // std::cout<< get_client_id.getID() << "\n";
+        NetworkManager(Server &interface);
+        NetworkManager(Client &interface);
 
-        }
-        NetworkManager(Client &interface)
-            : interface{interface}
-        {
-            // std::cout<< get_client_id.getID() << "\n";
-            init();
+        void setID(const unsigned int& id);
+        unsigned int getID();
 
-        }
+        void connected();
 
-        void connected()
-        {
-            std::cout << "retrieve ID\n";
-            send(get_client_id, RPCTarget::Server, {});
-        }
+        void init();
 
-        void init()
+        void receive(const std::string_view &data, uv_stream_t *client);
+
+        void executeRPCs();
+
+        template <class input = Datagram<>, auto execution = [](const input &) -> std::optional<SerializedDatagram>{ return {}; }, typename response = void>
+        void send(const RPC<input, execution, response> &rpc, const RPCTarget::RPCTarget &target, const input &dgram)
         {
-            interface.setCallback([this](const std::string_view &data, const uv_stream_t *client){receive(data,client);});
-            interface.setCallback([this](){connected();});
-            std::thread([&](){createRPCs();}).detach();
+            const auto serialized {rpc.serialize(target, dgram)};
+            interface.send(serialized);
         }
 
-        void receive(const std::string_view &data, const uv_stream_t *client)
-        {
-            std::cout << "received data\n";
-        
-            intptr_t client_ptr = reinterpret_cast<intptr_t>(client);
-
-            ClientInfo& info = infos[client_ptr];
-            info.append(data);
-
-            queue.push(&info);
-            queue_wait.notify_one();
-        }
-
-        void createRPCs()
-        {
-            while(true)
-            {
-                std::unique_lock<std::mutex> lock(queue_mutex);
-                queue_wait.wait(lock, [this] { return !queue.empty(); });
-
-                auto* client = queue.front();
-                queue.pop();
-
-                while(true)
-                {
-
-                const auto message = client->createMessage();
-                if(!message) break;
-
-
-                RPCPacketHeader* header = (RPCPacketHeader*)((*message).data());
-
-                const std::string_view view{(*message).data() + sizeof(RPCPacketHeader), (*message).size() - sizeof(RPCPacketHeader)};
-
-                std::cout << "header->rpc_id " << header->rpc_id << "\n";
-                if (rpcs.contains(header->rpc_id))
-                    rpcs[header->rpc_id]->rpc(view);
-
-                    }
-
-            }
-        }
-
-        template <class datagram = Datagram<>, auto execution = [](const datagram &) {}>
-        void send(const RPC<datagram, execution> &rpc, const RPCTarget::RPCTarget &target, const datagram &dgram)
-        {
-            interface.send(rpc.serialize(target, dgram));
-        }
-
-        bool isServer()
-        {
-            return id && *id==0;
-        }
-
-        bool isClient()
-        {
-            return !isServer();
-        }
+        bool isServer();
+        bool isClient();
 
     private:
-
         std::condition_variable queue_wait;
         std::mutex queue_mutex;
-        std::queue<ClientInfo*> queue;
-        
-        std::map<intptr_t, ClientInfo> infos; 
+        std::queue<ClientInfo *> queue;
+
+        std::map<intptr_t, ClientInfo> infos;
         NetworkInterface &interface;
-        std::optional<unsigned int> id{};
+        unsigned int id{};
     };
 
 }
-
