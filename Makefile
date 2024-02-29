@@ -13,7 +13,7 @@ $(BUILD_DIR)/Makefile: CMakeLists.txt | $(BUILD_DIR)
 
 # Build the executable
 $(EXECUTABLE): $(BUILD_DIR)/Makefile
-	$(MAKE) -C $(BUILD_DIR)
+	$(MAKE) -j8 -C $(BUILD_DIR)
 
 # Run the game
 run: $(EXECUTABLE)

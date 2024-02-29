@@ -1,11 +1,38 @@
 #include <network/network_manager.hpp>
 
-network::RPC<network::Datagram<>, [](const network::Datagram<> &data)
+auto say_hi(const network::Datagram<> &data)
+{
+    std::cout << "hi\n";
+}
+
+inline auto say_hi_rpc = network::GlobalRPC<&say_hi>;
+
+auto print_num(const network::Datagram<int> &data)
+{
+    std::cout << data.get<0>() << "\n";
+}
+inline auto print_num_rpc = network::GlobalRPC<&print_num>;
+
+auto add(const network::Datagram<int, int> &data)
+{
+    std::cout << data.get<0>() << "+" << data.get<1>() << "\n";
+    return network::Datagram<int>{data.get<0>() + data.get<1>()};
+}
+
+// inline auto add_rpc = network::GlobalRPC<&add, network::RPC<network::Datagram<int>, [](const auto &data)
+//                                                             { std::cout << data.get() << "\n"; }>>;
+
+inline auto add_rpc = network::GlobalAction<&add, &print_num>;
+inline auto add_then_hi_rpc = network::GlobalAction<&add, &print_num, &say_hi>;
+// inline auto add_rpc = network::GlobalRPC<&add, print_num_rpc>;
+
+
+network::RPC<network::Datagram<>, [](const auto &data)
              {
                  static unsigned int max_id = 1;
                  return network::Datagram{max_id++};
              },
-             network::RPC<network::Datagram<unsigned int>, [](const network::Datagram<unsigned int> &data)
+             network::RPC<network::Datagram<unsigned int>, [](const auto &data)
                           {
                 network::network_manager->setID(data.get());
                 std::cout << "set ID to "<< data.get() << "\n"; }>>
@@ -37,6 +64,9 @@ network::NetworkManager::NetworkManager(Client &interface)
 void network::NetworkManager::connected()
 {
     send(get_client_id, RPCTarget::Server, {});
+    send(add_rpc, RPCTarget::Server, {1, 2});
+    send(say_hi_rpc, RPCTarget::Server, {});
+    send(add_then_hi_rpc, RPCTarget::Server, {});
 }
 
 void network::NetworkManager::init()

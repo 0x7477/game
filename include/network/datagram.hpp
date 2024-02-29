@@ -161,11 +161,11 @@ namespace network
         }
 
         template <std::size_t I = 0>
-        inline typename std::enable_if<I == sizeof...(Args), void>::type
+        constexpr inline typename std::enable_if<I == sizeof...(Args), void>::type
         deserialize(std::string_view &buffer) {}
 
         template <std::size_t I = 0>
-            inline typename std::enable_if < I<sizeof...(Args), void>::type
+        constexpr inline typename std::enable_if < I<sizeof...(Args), void>::type
                                              deserialize(std::string_view &buffer)
         {
             deserialize_element(buffer, std::get<I>(data));
@@ -174,10 +174,10 @@ namespace network
 
         template <std::size_t I = 0>
         inline typename std::enable_if<I == sizeof...(Args), void>::type
-        serialize(std::vector<char> &buffer) const {}
+        constexpr serialize(std::vector<char> &buffer) const {}
 
         template <std::size_t I = 0>
-        inline typename std::enable_if < I<sizeof...(Args), void>::type
+        constexpr inline typename std::enable_if < I<sizeof...(Args), void>::type
         serialize(std::vector<char> &buffer) const
         {
             serialize_element(buffer, std::get<I>(data));
@@ -197,13 +197,13 @@ namespace network
         }
 
         template <std::size_t N = 0>
-        auto& get() const
+        constexpr auto& get() const
         {
             return std::get<N>(data);
         }
 
                 
-        auto& getData() const
+        constexpr auto& getData() const
         {
             return data;
         }

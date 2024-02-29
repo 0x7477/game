@@ -43,9 +43,7 @@ namespace network
         RPCTarget::RPCTarget target;
     };
 
-    template <class input = Datagram<>, auto execution = [](const input &) -> std::optional<SerializedDatagram>
-              { return {}; },
-              typename response = void>
+    template <class input = Datagram<>, auto execution = []() {}, typename response = void>
     class RPC : public RPCBase
     {
     public:
@@ -69,7 +67,6 @@ namespace network
             if constexpr (std::is_same<return_type, void>::value)
             {
                 execution(dgram);
-                return {};
             }
             else
             {
@@ -77,6 +74,8 @@ namespace network
                 const SerializedDatagram serialized_datagram{response::serialize(RPCTarget::Client, serialized_response)};
                 return {serialized_datagram};
             }
+
+            return {};
         };
 
         static constexpr rpc_id_t getID()
@@ -116,30 +115,98 @@ namespace network
     template <typename T>
     class Synced;
 
-    template <std::size_t N, typename Tuple, typename Func, std::size_t... Is>
-    void tupleToArgsHelper(const Tuple &t, Func &&f, std::index_sequence<Is...>)
+    template <typename Member, std::size_t... Is, typename Tuple, typename Func>
+    constexpr inline void call_member(const Tuple &t, Func &&f, std::index_sequence<Is...>, network::Synced<Member> *member_pointer)
     {
-        f(std::get<N + Is>(t)...);
+        std::invoke(f, &member_pointer->t, std::get<2 + Is>(t)...);
     }
 
-    template <std::size_t N = 0, typename Tuple, typename Func>
-    void tupleToArgsHelper(const Tuple &t, Func &&f)
+    template <class Sig>
+    struct member_function_datagram;
+    template <class R, class C, class... Args>
+    struct member_function_datagram<R (C::*)(Args...)>
     {
-        constexpr std::size_t tuple_size = std::tuple_size_v<Tuple>;
-        tupleToArgsHelper<N>(t, std::forward<Func>(f), std::make_index_sequence<tuple_size - N>{});
-    }
+        using datagram = Datagram<unsigned int, unsigned int, typename std::remove_reference<Args>::type...>;
+        using member_class = C;
+        constexpr static std::size_t size = sizeof...(Args);
+    };
 
-    template <typename Member, auto function, typename... Args>
-    class RPC<network::Datagram<unsigned int, unsigned int, Args...>,
-              [](const network::Datagram<unsigned int, unsigned int, Args...> &data)
-              {
-                  auto &objects_list = network::synced_objects[std::get<0>(data.getData())];
-                  auto &any = objects_list[std::get<1>(data.getData())];
-                  network::Synced<Member> *member_pointer = std::any_cast<network::Synced<Member> *>(any);
+    template <class R, class... Args>
+    struct member_function_datagram<R(Args...)>
+    {
+        using datagram = Datagram<unsigned int, unsigned int, typename std::remove_reference<Args>::type...>;
+        constexpr static std::size_t size = sizeof...(Args);
+    };
 
-                  tupleToArgs<2>(data.getData(), [&member_pointer](auto &&...args)
-                              { member_pointer->t.function(std::forward<decltype(args)>(args)...); });
-              }>
+    template <auto function>
+    inline class RPC<typename member_function_datagram<decltype(function)>::datagram,
+                     [](const auto &data)
+                     {
+                         using member = typename member_function_datagram<decltype(function)>::member_class;
+                         const auto &objects_list = network::synced_objects[std::get<0>(data.getData())];
+                         const auto &any = objects_list[std::get<1>(data.getData())];
+                         network::Synced<member> *member_pointer = std::any_cast<network::Synced<member> *>(any);
+
+                         call_member(data.getData(), function, std::make_index_sequence<member_function_datagram<decltype(function)>::size>{}, member_pointer);
+                     }>
         MemberRPC;
+
+    template <class C>
+    struct global_function_datagram;
+
+    template <class R, class... Args>
+    struct global_function_datagram<R(Datagram<Args...>)>
+    {
+        using datagram = Datagram<typename std::remove_reference<Args>::type...>;
+        constexpr static std::size_t size = sizeof...(Args);
+    };
+
+    template <class R, class... Args>
+    struct global_function_datagram<R (*)(const Datagram<Args...> &)>
+    {
+        using datagram = Datagram<typename std::remove_reference<Args>::type...>;
+        constexpr static std::size_t size = sizeof...(Args);
+    };
+
+    template <auto call>
+    inline class RPC<typename global_function_datagram<decltype(call)>::datagram, call> GlobalRPC;
+
+    template <auto call, auto... responses>
+    inline class RPC<typename global_function_datagram<decltype(call)>::datagram, call, RPC<typename global_function_datagram<decltype(responses)>::datagram, responses>...> GlobalAction;
+
+    // template <auto call, auto response>
+    // inline class RPC<typename global_function_datagram<decltype(call)>::datagram, call, RPC<typename global_function_datagram<decltype(response)>::datagram, response>> GlobalAction;
+
+    // template <auto call, auto response, auto response_response>
+    // inline class RPC<typename global_function_datagram<decltype(call)>::datagram, call, RPC<typename global_function_datagram<decltype(response)>::datagram, response,RPC<typename global_function_datagram<decltype(response_response)>::datagram, response_response>>> GlobalAction2;
+
+    // template <auto call>
+    // inline class RPC<Datagram<>, call> GlobalRPC;
+
+
+    template <auto call>
+class RPCWrapper {
+public:
+    using datagram = typename global_function_datagram<decltype(call)>::datagram;
+    static constexpr auto function = call;
+};
+
+template <auto call, typename... Responses>
+class GlobalAction;
+
+template <auto call, auto response, auto... responses>
+class GlobalAction<call, response, responses...> {
+public:
+    using datagram = typename global_function_datagram<decltype(call)>::datagram;
+    static constexpr auto function = call;
+
+    using next_action = GlobalAction<response, responses...>;
+};
+
+template <auto call>
+using GlobalRPC = RPCWrapper<call>;
+
+template <auto call, auto... responses>
+using GlobalAction1 = GlobalAction<call, responses...>;
 
 }

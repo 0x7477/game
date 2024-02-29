@@ -18,20 +18,17 @@ public:
         std::cout << name << " (" << health << ")\n";
     }
 
+    void setHealth(const int& h)
+    {
+        health = h;
+    }
+
     int health{100};
     std::string name;
 };
 
-// inline network::MemberRPC<Player,print> print_rpc;
 
-inline network::RPC<network::Datagram<unsigned int, unsigned int>,
-                    [](const network::Datagram<unsigned int, unsigned int> &data)
-                    {
-                        auto &objects_list = network::synced_objects[data.get<0>()];
-                        auto &any = objects_list[data.get<1>()];
-                        network::Synced<Player> *player_pointer = std::any_cast<network::Synced<Player> *>(any);
-                        player_pointer->t.print();
-                    }>
-    print_rpc;
+inline auto print_rpc = network::MemberRPC<&Player::print>;
+inline auto set_health_rpc = network::MemberRPC<&Player::setHealth>;
 
 template class network::Synced<Player>;
