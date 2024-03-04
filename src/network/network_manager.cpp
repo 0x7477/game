@@ -5,13 +5,14 @@ auto say_hi(const network::Datagram<> &data)
     std::cout << "hi\n";
 }
 
-inline auto say_hi_rpc = network::GlobalRPC<&say_hi>;
+// inline auto say_hi_rpc = network::GlobalRPC<&say_hi>;
 
 auto print_num(const network::Datagram<int> &data)
 {
     std::cout << data.get<0>() << "\n";
+    return network::Datagram<int>{data.get<0>()};
 }
-inline auto print_num_rpc = network::GlobalRPC<&print_num>;
+// inline auto print_num_rpc = network::GlobalRPC<&print_num>;
 
 auto add(const network::Datagram<int, int> &data)
 {
@@ -19,24 +20,26 @@ auto add(const network::Datagram<int, int> &data)
     return network::Datagram<int>{data.get<0>() + data.get<1>()};
 }
 
-// inline auto add_rpc = network::GlobalRPC<&add, network::RPC<network::Datagram<int>, [](const auto &data)
-//                                                             { std::cout << data.get() << "\n"; }>>;
+// inline auto add_rpc2 = network::GlobalRPC<&add>;
+// inline auto a = network::GlobalRPC<&print_num>;
+// inline auto b = network::GlobalRPC<&say_hi>;
 
-inline auto add_rpc = network::GlobalAction<&add, &print_num>;
-inline auto add_then_hi_rpc = network::GlobalAction<&add, &print_num, &say_hi>;
+inline auto add_rpc2 = network::RPCChain3<&print_num, &print_num,&print_num>;
+// inline auto add_rpc2 = network::RPCChain3<&add, &print_num,&print_num>;
+// inline auto add_then_hi_rpc = network::RPCChain2<&add, &print_num, &print_num,&print_num,&print_num>;
 // inline auto add_rpc = network::GlobalRPC<&add, print_num_rpc>;
 
 
-network::RPC<network::Datagram<>, [](const auto &data)
-             {
-                 static unsigned int max_id = 1;
-                 return network::Datagram{max_id++};
-             },
-             network::RPC<network::Datagram<unsigned int>, [](const auto &data)
-                          {
-                network::network_manager->setID(data.get());
-                std::cout << "set ID to "<< data.get() << "\n"; }>>
-    get_client_id;
+// network::RPC<network::Datagram<>, [](const auto &data)
+//              {
+//                  static unsigned int max_id = 1;
+//                  return network::Datagram{max_id++};
+//              },
+//              network::RPC<network::Datagram<unsigned int>, [](const auto &data)
+//                           {
+//                 network::network_manager->setID(data.get());
+//                 std::cout << "set ID to "<< data.get() << "\n"; }>>
+//     get_client_id;
 
 network::NetworkManager::NetworkManager(Server &interface)
     : interface{interface}, id{0}
@@ -63,10 +66,10 @@ network::NetworkManager::NetworkManager(Client &interface)
 
 void network::NetworkManager::connected()
 {
-    send(get_client_id, RPCTarget::Server, {});
-    send(add_rpc, RPCTarget::Server, {1, 2});
-    send(say_hi_rpc, RPCTarget::Server, {});
-    send(add_then_hi_rpc, RPCTarget::Server, {});
+    // send(get_client_id, RPCTarget::Server, {});
+    // send(add_rpc, RPCTarget::Server, {1, 2});
+    // send(add_then_hi_rpc, RPCTarget::Server, {1,2});
+    send(add_rpc2, RPCTarget::Server, {1});
 }
 
 void network::NetworkManager::init()
@@ -119,6 +122,8 @@ void network::NetworkManager::executeRPCs()
             const std::string_view view{(*message).data() + sizeof(RPCPacketHeader), (*message).size() - sizeof(RPCPacketHeader)};
 
             assert(rpcs.contains(header->rpc_id));
+
+            std::cout << "execute RPC\n";
 
             const auto result = rpcs[header->rpc_id]->rpc(view);
             if (!result)

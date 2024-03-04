@@ -28,7 +28,7 @@ public:
 };
 
 
-inline auto print_rpc = network::MemberRPC<&Player::print>;
-inline auto set_health_rpc = network::MemberRPC<&Player::setHealth>;
+// inline auto print_rpc = network::MemberRPC<&Player::print>;
+// inline auto set_health_rpc = network::MemberRPC<&Player::setHealth>;
 
-template class network::Synced<Player>;
+// template class network::Synced<Player>;

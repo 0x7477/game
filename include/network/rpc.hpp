@@ -49,7 +49,7 @@ namespace network
     public:
         constexpr RPC()
         {
-            std::cout << this << " " << getID() << "\n";
+            // std::cout << this << " " << getID() << "\n";
             rpcs[getID()] = this;
 
             if constexpr (!std::is_same<response, void>::value)
@@ -68,7 +68,7 @@ namespace network
             {
                 execution(dgram);
             }
-            else
+            else if constexpr (!std::is_same<response, void>::value)
             {
                 const auto serialized_response = execution(dgram);
                 const SerializedDatagram serialized_datagram{response::serialize(RPCTarget::Client, serialized_response)};
@@ -80,6 +80,8 @@ namespace network
 
         static constexpr rpc_id_t getID()
         {
+
+            std::cout << __PRETTY_FUNCTION__ << std::endl << "==============\n";
             const std::string name{typeid(RPC<input, execution, response>).name()};
             const auto hash{std::hash<std::string>{}(name)};
             return hash;
@@ -168,45 +170,16 @@ namespace network
         constexpr static std::size_t size = sizeof...(Args);
     };
 
+    // template <auto call>
+    // inline class RPC<typename global_function_datagram<decltype(call)>::datagram, call> GlobalRPC;
+
     template <auto call>
     inline class RPC<typename global_function_datagram<decltype(call)>::datagram, call> GlobalRPC;
 
-    template <auto call, auto... responses>
-    inline class RPC<typename global_function_datagram<decltype(call)>::datagram, call, RPC<typename global_function_datagram<decltype(responses)>::datagram, responses>...> GlobalAction;
+    template <auto call, auto response>
+    inline class RPC<typename global_function_datagram<decltype(call)>::datagram, call, RPC<typename global_function_datagram<decltype(response)>::datagram, response>> RPCChain2;
 
-    // template <auto call, auto response>
-    // inline class RPC<typename global_function_datagram<decltype(call)>::datagram, call, RPC<typename global_function_datagram<decltype(response)>::datagram, response>> GlobalAction;
-
-    // template <auto call, auto response, auto response_response>
-    // inline class RPC<typename global_function_datagram<decltype(call)>::datagram, call, RPC<typename global_function_datagram<decltype(response)>::datagram, response,RPC<typename global_function_datagram<decltype(response_response)>::datagram, response_response>>> GlobalAction2;
-
-    // template <auto call>
-    // inline class RPC<Datagram<>, call> GlobalRPC;
-
-
-    template <auto call>
-class RPCWrapper {
-public:
-    using datagram = typename global_function_datagram<decltype(call)>::datagram;
-    static constexpr auto function = call;
-};
-
-template <auto call, typename... Responses>
-class GlobalAction;
-
-template <auto call, auto response, auto... responses>
-class GlobalAction<call, response, responses...> {
-public:
-    using datagram = typename global_function_datagram<decltype(call)>::datagram;
-    static constexpr auto function = call;
-
-    using next_action = GlobalAction<response, responses...>;
-};
-
-template <auto call>
-using GlobalRPC = RPCWrapper<call>;
-
-template <auto call, auto... responses>
-using GlobalAction1 = GlobalAction<call, responses...>;
+    template <auto call, auto response1, auto response2>
+    inline class RPC<typename global_function_datagram<decltype(call)>::datagram, call, RPC<typename global_function_datagram<decltype(response1)>::datagram, response1, RPC<typename global_function_datagram<decltype(response2)>::datagram, response2>>> RPCChain3;
 
 }

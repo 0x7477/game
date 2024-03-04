@@ -17,6 +17,7 @@ namespace network
 
         void connect();
         void send(const std::string_view &message) override;
+        void send(const std::string_view &message, uv_stream_t *client) override;
         void startReceiving();
         void runEventLoop();
 

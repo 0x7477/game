@@ -38,6 +38,11 @@ void network::Client::connect()
             delete req; });
 }
 
+
+void network::Client::send(const std::string_view &message, uv_stream_t *client)
+{
+    send(message);
+}
 void network::Client::send(const std::string_view &message)
 {
     uv_buf_t buf = uv_buf_init(const_cast<char *>(message.data()), message.size());
