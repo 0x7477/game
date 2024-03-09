@@ -17,14 +17,18 @@ namespace network
 
     typedef uint32_t rpc_message_length_t;
     typedef uint32_t rpc_id_t;
-    namespace RPCTarget
+    typedef uint8_t RPCTarget;
+
+    namespace RPCTargets
     {
-        enum RPCTarget : uint8_t
-        {
-            Server,
-            All,
-            Client
-        };
+        const unsigned int Me{1 << 0};
+        const unsigned int Server{1 << 1};
+        const unsigned int Clients{1 << 2};
+        const unsigned int Buffered{1 << 3};
+
+        const unsigned int AllClients = Me | Clients; 
+        const unsigned int AllClientsBuffered = AllClients | Buffered; 
+        const unsigned int ServerBuffered = Server | Buffered; 
     }
 
     class RPCBase
@@ -32,7 +36,6 @@ namespace network
     public:
         constexpr RPCBase(){};
         virtual std::optional<SerializedDatagram> rpc(const std::string_view &data);
-        // virtual rpc_id_t getID() const;
     };
     inline std::map<std::size_t, RPCBase *> rpcs;
 
@@ -40,23 +43,19 @@ namespace network
     {
         rpc_message_length_t message_length;
         rpc_id_t rpc_id;
-        RPCTarget::RPCTarget target;
+        RPCTarget target;
     };
 
     template <class input = Datagram<>, auto execution = []() {}, typename response = void>
     class RPC : public RPCBase
     {
     public:
-        constexpr RPC()
+        constexpr RPC(const std::source_location location = std::source_location::current())
         {
-            // std::cout << this << " " << getID() << "\n";
             rpcs[getID()] = this;
 
             if constexpr (!std::is_same<response, void>::value)
-            {
-                response *res = new response();
-                rpcs[response::getID()] = res;
-            }
+                new response();
         }
 
         std::optional<SerializedDatagram> rpc(const std::string_view &data) override
@@ -64,24 +63,26 @@ namespace network
             using return_type = typename std::result_of<decltype(execution)(input)>::type;
 
             input dgram{SerializedDatagram{data}};
-            if constexpr (std::is_same<return_type, void>::value)
-            {
-                execution(dgram);
-            }
-            else if constexpr (!std::is_same<response, void>::value)
+
+            if constexpr (!std::is_same<response, void>::value && !std::is_same<return_type, void>::value)
             {
                 const auto serialized_response = execution(dgram);
-                const SerializedDatagram serialized_datagram{response::serialize(RPCTarget::Client, serialized_response)};
+                const SerializedDatagram serialized_datagram{response::serialize(RPCTargets::Clients | RPCTargets::Server, serialized_response)};
                 return {serialized_datagram};
             }
+
+            execution(dgram);
 
             return {};
         };
 
+        void local_rpc(const input &data)
+        {
+            execution(data);
+        };
+
         static constexpr rpc_id_t getID()
         {
-
-            std::cout << __PRETTY_FUNCTION__ << std::endl << "==============\n";
             const std::string name{typeid(RPC<input, execution, response>).name()};
             const auto hash{std::hash<std::string>{}(name)};
             return hash;
@@ -92,7 +93,7 @@ namespace network
             return serialize();
         }
 
-        static std::string serialize(const RPCTarget::RPCTarget &target, const SerializedDatagram &data)
+        static std::string serialize(const RPCTarget &target, const SerializedDatagram &data)
         {
             std::vector<char> message;
             const rpc_message_length_t message_size{(rpc_message_length_t)(sizeof(RPCPacketHeader) + data.size())};
@@ -108,7 +109,7 @@ namespace network
             return std::string(message.data(), message_size);
         }
 
-        static std::string serialize(const RPCTarget::RPCTarget &target, const input &dgram)
+        static std::string serialize(const RPCTarget &target, const input &dgram)
         {
             return serialize(target, dgram.serialize());
         }
@@ -176,10 +177,32 @@ namespace network
     template <auto call>
     inline class RPC<typename global_function_datagram<decltype(call)>::datagram, call> GlobalRPC;
 
-    template <auto call, auto response>
-    inline class RPC<typename global_function_datagram<decltype(call)>::datagram, call, RPC<typename global_function_datagram<decltype(response)>::datagram, response>> RPCChain2;
+    // template <auto call, auto response>
+    // inline class RPC<typename global_function_datagram<decltype(call)>::datagram, call,response> GlobalRPCWithResponse;
 
-    template <auto call, auto response1, auto response2>
-    inline class RPC<typename global_function_datagram<decltype(call)>::datagram, call, RPC<typename global_function_datagram<decltype(response1)>::datagram, response1, RPC<typename global_function_datagram<decltype(response2)>::datagram, response2>>> RPCChain3;
+    template <auto call, auto... responses>
+    class RPCChainN;
 
+    template <auto call, auto response, auto... responses>
+    class RPCChainN<call, response, responses...>
+    {
+    public:
+        using current_datagram = typename global_function_datagram<decltype(call)>::datagram;
+        using next_chain = RPCChainN<response, responses...>;
+
+        using type = RPC<current_datagram, call, typename next_chain::type>;
+    };
+
+    // Spezialfall für die Endbedingung
+    template <auto call>
+    class RPCChainN<call>
+    {
+    public:
+        using current_datagram = typename global_function_datagram<decltype(call)>::datagram;
+        using type = RPC<current_datagram, call>;
+    };
+
+    // Alias für bequeme Verwendung
+    template <auto call, auto... responses>
+    using RPCChain = typename RPCChainN<call, responses...>::type;
 }

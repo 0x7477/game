@@ -5,14 +5,11 @@ auto say_hi(const network::Datagram<> &data)
     std::cout << "hi\n";
 }
 
-// inline auto say_hi_rpc = network::GlobalRPC<&say_hi>;
-
 auto print_num(const network::Datagram<int> &data)
 {
-    std::cout << data.get<0>() << "\n";
+    std::cout << data.get<0>() << std::endl;
     return network::Datagram<int>{data.get<0>()};
 }
-// inline auto print_num_rpc = network::GlobalRPC<&print_num>;
 
 auto add(const network::Datagram<int, int> &data)
 {
@@ -20,32 +17,12 @@ auto add(const network::Datagram<int, int> &data)
     return network::Datagram<int>{data.get<0>() + data.get<1>()};
 }
 
-// inline auto add_rpc2 = network::GlobalRPC<&add>;
-// inline auto a = network::GlobalRPC<&print_num>;
-// inline auto b = network::GlobalRPC<&say_hi>;
-
-inline auto add_rpc2 = network::RPCChain3<&print_num, &print_num,&print_num>;
-// inline auto add_rpc2 = network::RPCChain3<&add, &print_num,&print_num>;
-// inline auto add_then_hi_rpc = network::RPCChain2<&add, &print_num, &print_num,&print_num,&print_num>;
-// inline auto add_rpc = network::GlobalRPC<&add, print_num_rpc>;
-
-
-// network::RPC<network::Datagram<>, [](const auto &data)
-//              {
-//                  static unsigned int max_id = 1;
-//                  return network::Datagram{max_id++};
-//              },
-//              network::RPC<network::Datagram<unsigned int>, [](const auto &data)
-//                           {
-//                 network::network_manager->setID(data.get());
-//                 std::cout << "set ID to "<< data.get() << "\n"; }>>
-//     get_client_id;
+inline network::RPCChain<&print_num, &print_num, &print_num, &print_num, &print_num> add_rpc2;
 
 network::NetworkManager::NetworkManager(Server &interface)
-    : interface{interface}, id{0}
+    : interface{interface}, id{0}, is_server{true}
 {
     init();
-    // std::cout<< get_client_id.getID() << "\n";
 }
 
 void network::NetworkManager::setID(const unsigned int &id_)
@@ -53,35 +30,72 @@ void network::NetworkManager::setID(const unsigned int &id_)
     id = id_;
 }
 
+bool network::NetworkManager::isConnected() const
+{
+    return is_connected;
+}
+
 unsigned int network::NetworkManager::getID()
 {
-    return id;
+    return network_manager->id;
 }
 network::NetworkManager::NetworkManager(Client &interface)
-    : interface{interface}
+    : interface{interface}, is_server{false}
 {
-    // std::cout<< get_client_id.getID() << "\n";
     init();
 }
 
+network::RPC<network::Datagram<>, [](const auto &data)
+             {
+                 static unsigned int max_id = 1;
+                 return network::Datagram{max_id++};
+             },
+             network::RPC<network::Datagram<unsigned int>, [](const auto &data)
+                          {
+                network::network_manager->setID(data.get());
+                network::network_manager->setConnected();
+
+                std::cout << "set ID to "<< data.get() << "\n"; }>>
+    get_client_id;
+
 void network::NetworkManager::connected()
 {
-    // send(get_client_id, RPCTarget::Server, {});
-    // send(add_rpc, RPCTarget::Server, {1, 2});
-    // send(add_then_hi_rpc, RPCTarget::Server, {1,2});
-    send(add_rpc2, RPCTarget::Server, {1});
+    send(get_client_id, RPCTargets::Server, {});
+}
+void network::NetworkManager::setConnected(const bool &connected)
+{
+    is_connected = connected;
+}
+
+void network::NetworkManager::clientConnected(uv_stream_t *client)
+{
+    for (const auto &message : buffered_messages)
+        interface.send(message, client);
+}
+
+void network::NetworkManager::connectionClosed()
+{
+    setConnected(false);
 }
 
 void network::NetworkManager::init()
 {
     network_manager = this;
-    interface.setCallback([this](const std::string_view &data, uv_stream_t *client)
+    interface.setCallbackReceive([this](const std::string_view &data, uv_stream_t *client)
                           { receive(data, client); });
-    interface.setCallback([this]()
+    interface.setCallbackConnected([this]()
                           { connected(); });
-    std::thread([&]()
-                { executeRPCs(); })
-        .detach();
+
+    interface.setCallbackNewConnection([this](uv_stream_t *client)
+                          { clientConnected(client); });
+
+    interface.setCallbackConnectionLost([this]()
+                          { connectionClosed(); });
+
+    rpc_executor_thread = std::thread([&]()
+                { executeRPCs(); });
+
+    rpc_executor_thread.detach();
 }
 
 void network::NetworkManager::receive(const std::string_view &data, uv_stream_t *client)
@@ -94,49 +108,69 @@ void network::NetworkManager::receive(const std::string_view &data, uv_stream_t 
     info.client_stream = client;
 
     queue.push(&info);
-    queue_wait.notify_one();
+    // queue_wait.notify_one();
+
+    rpc_call_semaphore.release();
 }
 
 void network::NetworkManager::executeRPCs()
 {
     while (true)
     {
+        rpc_call_semaphore.acquire();
+        // std::unique_lock<std::mutex> lock(queue_mutex);
 
-        std::unique_lock<std::mutex> lock(queue_mutex);
-
-        queue_wait.wait(lock, [this]
-                        { return !queue.empty(); });
+        // queue_wait.wait(lock, [this]
+        //                 { return !queue.empty(); });
 
         auto *client = queue.front();
         queue.pop();
 
         while (true)
         {
-
             const auto message = client->createMessage();
             if (!message)
                 break;
 
-            RPCPacketHeader *header = (RPCPacketHeader *)((*message).data());
-
+            const RPCPacketHeader *header = (RPCPacketHeader *)((*message).data());
             const std::string_view view{(*message).data() + sizeof(RPCPacketHeader), (*message).size() - sizeof(RPCPacketHeader)};
 
-            assert(rpcs.contains(header->rpc_id));
+            if (isClient() || (isServer() && header->target & RPCTargets::Server))
+                executeRPC(*header, view, *client);
 
-            std::cout << "execute RPC\n";
+            if (isServer() && header->target & RPCTargets::Clients)
+            {
+                for (const auto &[ptr, data] : infos)
+                {
+                    auto client_ptr = reinterpret_cast<uv_stream_t *>(ptr);
+                    if (client_ptr == client->client_stream)
+                        continue;
+                    interface.send(*message, client_ptr);
+                }
+            }
 
-            const auto result = rpcs[header->rpc_id]->rpc(view);
-            if (!result)
-                continue;
-
-            interface.send(*result, client->client_stream);
+            if (isServer() && header->target & RPCTargets::Buffered)
+            {
+                buffered_messages.push_back(*message);
+            }
         }
     }
 }
 
+void network::NetworkManager::executeRPC(const RPCPacketHeader &header, const std::string_view &data, const ClientInfo &client)
+{
+    assert(rpcs.contains(header.rpc_id));
+
+    const auto result = rpcs[header.rpc_id]->rpc(data);
+    if (!result)
+        return;
+
+    interface.send(*result, client.client_stream);
+}
+
 bool network::NetworkManager::isServer()
 {
-    return id == 0;
+    return is_server;
 }
 
 bool network::NetworkManager::isClient()

@@ -27,11 +27,10 @@ void network::Client::connect()
             if (status < 0) {
                 std::cerr << "Connection error: " << uv_strerror(status) << std::endl;
                 client->reconnect();
+                client->connection_lost();
                 uv_close(reinterpret_cast<uv_handle_t*>(req->handle), nullptr);
             } else {
                 std::cout << "Connected to server" << std::endl;
-
-
                 client->connected();
                 client->startReceiving();
             }

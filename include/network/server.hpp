@@ -12,7 +12,6 @@ namespace network
     public:
         Server(const std::string &ip, const unsigned int &port);
         void start();
-        static void processPacket(const std::string_view &data, const RPCPacketHeader *header);
         static void receivePacket(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf);
         void onConnection(uv_stream_t *server);
         void send(const std::string_view &message, uv_stream_t *client) override;

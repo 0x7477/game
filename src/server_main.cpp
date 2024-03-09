@@ -1,8 +1,6 @@
 #include <network/server.hpp>
 #include <network/datagram.hpp>
 
-#include <network/rpcs/echo.hpp>
-#include <network/rpcs/add_one.hpp>
 #include <network/network_manager.hpp>
 #include <network/synced.hpp>
 

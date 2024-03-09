@@ -32,18 +32,6 @@ void network::Server::start()
     std::cout << "Server listening on " << ip << ":" << port << std::endl;
 }
 
-void network::Server::processPacket(const std::string_view &data, const RPCPacketHeader *header)
-{
-    std::cout << "processPacket data.size() " << data.size() << "\n";
-    if (!rpcs.contains(header->rpc_id))
-        std::cout << "header->rpc_id " << header->rpc_id << "\n";
-
-    // int i =0;
-    // for(const auto& c : data)
-    // std::cout<< i << ": " << (int) c << "\n";
-    rpcs[header->rpc_id]->rpc({data.data() + sizeof(RPCPacketHeader), data.size() - sizeof(RPCPacketHeader)});
-}
-
 void network::Server::receivePacket(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf)
 {
     if (nread < 0)
@@ -58,83 +46,6 @@ void network::Server::receivePacket(uv_stream_t *client, ssize_t nread, const uv
 
     Server *server = (Server *)client->data;
     server->receive(std::string_view{buf->base, (std::size_t)nread}, client);
-
-    // ssize_t packet_offset{0};
-    // auto &buffer = server.overhead_buffer[client];
-
-    // if (buffer.size() > 0)
-    // {
-    //     std::cout<< "buffer.size() " << buffer.size() << "\n";
-    //     // we have data from the previous message
-    //     if (buffer.size() < sizeof(RPCPacketHeader::message_length))
-    //     {
-    //         // we still dont have the full size of the header
-    //         const std::size_t missing_header_size_bytes = sizeof(RPCPacketHeader::message_length) - buffer.size();
-    //         buffer += std::string{buf->base, missing_header_size_bytes};
-    //         nread -= missing_header_size_bytes;
-    //         packet_offset += missing_header_size_bytes;
-    //     }
-    //     RPCPacketHeader *header = (RPCPacketHeader *)buffer.data();
-    //     const ssize_t remaining_bytes{(ssize_t)(header->message_length - buffer.length())};
-
-    //     std::cout<< "header->message_length " << header->message_length << "\n";
-    //     std::cout<< "remaining_bytes " << remaining_bytes << "\n";
-    //     if (nread >= remaining_bytes)
-    //     {
-    //         std::cout<< "increase buffer" << "\n";
-    //         buffer += std::string{buf->base + packet_offset, (std::size_t)remaining_bytes};
-
-    //         std::cout << __LINE__ << " server.processPacket" << "\n";
-
-    //         server.processPacket(buffer, header);
-
-    //         packet_offset += remaining_bytes;
-    //         nread -= remaining_bytes;
-    //         buffer.clear();
-    //     }
-    //     else
-    //     {
-    //         std::cout<< "message still doesn't fit" << "\n";
-    //         // our message still doesn't fit
-
-    //         std::cout << "buffer.size()" << buffer.size() << "\n";
-    //         buffer += std::string{buf->base + packet_offset, (std::size_t)nread};
-    //         std::cout << "buffer.size()" << buffer.size() << "\n";
-
-    //         packet_offset += nread;
-    //         nread -= nread;
-    //     }
-    // }
-
-    // std::cout << "nread " << nread  << "\n";
-    // while (nread > 0)
-    // {
-    //     RPCPacketHeader *header = (RPCPacketHeader *)(buf->base + packet_offset);
-
-    //     if ((std::size_t)nread >= sizeof(header->message_length) && nread >= header->message_length)
-    //     {
-    //         const std::string_view message{buf->base + packet_offset, header->message_length};
-    //         std::cout << __LINE__ << " server.processPacket" << "\n";
-    //         processPacket(message, header);
-
-    //         packet_offset += header->message_length;
-    //         nread -= header->message_length;
-    //     }
-    //     else // store message for later use
-    //     {
-    //         // if ((std::size_t)nread >= sizeof(header->message_length))
-    //         //     buffer.reserve(std::max(std::size_t(0), buffer.capacity()- header->message_length));
-
-    //         std::cout<< "added  " << nread << " remaining bytes to buffer" << "\n";
-
-    //         buffer += std::string{buf->base + packet_offset, (std::size_t)nread};
-
-    //         std::cout << "packet length is: "<< *(unsigned int*) buffer.data() << "\n";
-
-    //         nread = 0;
-    //     }
-    // }
-    // std::cout << "done\n";
 }
 
 void network::Server::onConnection(uv_stream_t *server)
@@ -152,13 +63,17 @@ void network::Server::onConnection(uv_stream_t *server)
                 buf->base = new char[suggested_size];
                 buf->len = suggested_size; },
             receivePacket);
+
+        Server *server = (Server *)client->data;
+        server->new_connection(reinterpret_cast<uv_stream_t *>(client));
     }
     else
     {
         uv_close(reinterpret_cast<uv_handle_t *>(client), [](uv_handle_t *handle)
                  { 
                             std::cout << "delete handle\n";
-                            delete[] handle; });
+                            delete[] handle; 
+                });
     }
 }
 

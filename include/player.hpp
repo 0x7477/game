@@ -2,8 +2,8 @@
 #include <string>
 #include <iostream>
 #include <network/synced.hpp>
-
-class Player
+#include "game_object.hpp"
+class Player: public GameObject
 {
 public:
     Player(const std::string &name);
@@ -23,12 +23,18 @@ public:
         health = h;
     }
 
+
+    virtual void update(sf::RenderWindow& window) override;
+    virtual void display(sf::RenderWindow& window) override;
+
     int health{100};
+
+    float pos_x{0}, pos_y{0};
     std::string name;
 };
 
 
-// inline auto print_rpc = network::MemberRPC<&Player::print>;
-// inline auto set_health_rpc = network::MemberRPC<&Player::setHealth>;
+inline auto print_rpc = network::MemberRPC<&Player::print>;
+inline auto set_health_rpc = network::MemberRPC<&Player::setHealth>;
 
-// template class network::Synced<Player>;
+template class network::Synced<Player>;

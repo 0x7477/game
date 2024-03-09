@@ -11,39 +11,65 @@ namespace network
     template <typename T>
     class Synced;
 
-    template <typename T>
-    class RPC<network::Datagram<unsigned int, unsigned int, T>, [](const network::Datagram<unsigned int, unsigned int, T> &data)
-                              {
-                                  const unsigned int &player = std::get<0>(data.getData());
-                                  const unsigned int &id{std::get<1>(data.getData())};
-                                  const T &t{std::get<2>(data.getData())};
-                                  synced_objects[player].push_back(new Synced<T> {player, id, t});
-                              }>
+    template <std::size_t N, typename Tuple, typename Func, std::size_t... Is>
+    void tupleToArgsHelper(const Tuple &t, Func &&f, std::index_sequence<Is...>)
+    {
+        f(std::get<N + Is>(t)...);
+    }
+
+    template <std::size_t N, typename Tuple, typename Func>
+    void tupleToArgsHelper(const Tuple &t, Func &&f)
+    {
+        constexpr std::size_t tuple_size = std::tuple_size_v<Tuple>;
+        tupleToArgsHelper<N>(t, std::forward<Func>(f), std::make_index_sequence<tuple_size - N>{});
+    }
+
+    template <typename T, typename... Args>
+    class RPC<network::Datagram<unsigned int, unsigned int, RPCTarget, Args...>, [](const auto &tuple)
+              {
+                  const auto &data = tuple.getData();
+                  const unsigned int &player = std::get<0>(data);
+                  const unsigned int &id{std::get<1>(data)};
+                  const RPCTarget &target{std::get<2>(data)};
+
+                  tupleToArgsHelper<3>(data, [&](auto &&...args)
+                                       {
+                  const T t{std::forward<decltype(args)>(args)...};
+                  synced_objects[player].push_back(new Synced<T>{player, id, target, t}); });
+              }>
         synced_constructor;
 
     template <typename T>
     class Synced
     {
     public:
-        Synced(const T &t)
-            : t{t}, owner{true}, player{network_manager->getID()}, id{(unsigned int)(synced_objects[player].size())}
+        template <typename... Args>
+        Synced(const RPCTarget &target, const Args &...arguments)
+            : t{arguments...}, target{target}, owner{true}, player{NetworkManager::getID()}, id{(unsigned int)(synced_objects[player].size())}
         {
             synced_objects[player].push_back(this);
-            std::cout << "created synced class. owner: " << owner << "\n";
+            std::cout << "created synced class (" << typeid(T).name() << ") owner: " << owner << "\n";
 
-            const Datagram<unsigned int,unsigned int,T> datagram{player, id, t};
+            const Datagram<unsigned int, unsigned int, RPCTarget, Args...> datagram{player, id, target, arguments...};
 
-            network_manager->send(synced_constructor<T>, RPCTarget::All, datagram);
+            NetworkManager::send(synced_constructor<T, Args...>, target & ~RPCTargets::Me, datagram);
         }
-        Synced(const unsigned int &player, const unsigned int &id, const T &t)
-            : t{t}, owner{false}, player{player}, id{id}
+        template <typename... Args>
+        Synced(const unsigned int &player, const unsigned int &id, const RPCTarget &target, Args... arguments)
+            : t{arguments...}, target{target}, owner{false}, player{player}, id{id}
         {
-            std::cout << "created synced class. owner: " << owner << "\n";
+            std::cout << "created synced class (" << typeid(T).name() << ") owner: " << owner << "\n";
         }
 
+        template <class input = Datagram<>, auto execution = []() {}, typename response = void>
+        void execute(RPC<input, execution, response> &rpc, auto... params)
+        {
+            network::NetworkManager::send(rpc, target, {player, id, params...});
+        }
 
         // private:
         T t;
+        RPCTarget target;
         bool owner{false};
         unsigned int player;
         unsigned int id;
