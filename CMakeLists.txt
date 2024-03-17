@@ -16,13 +16,13 @@ add_executable(${PROJECT_NAME} src/generator_main.cpp)
 add_executable(server src/server_main.cpp)
 add_executable(client src/client_main.cpp)
 
-
 target_link_libraries(${PROJECT_NAME}_lib png uv)
 target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_lib)
-target_link_libraries(server ${PROJECT_NAME}_lib)
-target_link_libraries(client ${PROJECT_NAME}_lib sfml-system sfml-window sfml-graphics sfml-audio)
+target_link_libraries(server ${PROJECT_NAME}_lib sfml-system sfml-window sfml-graphics sfml-audio X11)
+target_link_libraries(client ${PROJECT_NAME}_lib sfml-system sfml-window sfml-graphics sfml-audio X11)
 
 include_directories(include)
+
 
 # Copy resources directory to build directory
 file(COPY resources DESTINATION ${CMAKE_BINARY_DIR})

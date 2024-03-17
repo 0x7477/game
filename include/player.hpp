@@ -1,12 +1,16 @@
 #pragma once
 #include <string>
 #include <iostream>
-#include <network/synced.hpp>
+#include <synced.hpp>
+#include <script.hpp>
 #include "game_object.hpp"
-class Player: public GameObject
+#include "transform.hpp"
+#include <chrono>
+
+class Player : public Script
 {
 public:
-    Player(const std::string &name);
+    Player(GameObject *game_object, const std::string &name);
     Player() = default;
 
     static void serialize(std::vector<char> &buffer, const Player &value);
@@ -18,23 +22,35 @@ public:
         std::cout << name << " (" << health << ")\n";
     }
 
-    void setHealth(const int& h)
+    void setHealth(const int &h)
     {
         health = h;
     }
 
+    void updatePosition(const Transform &transform);
 
-    virtual void update(sf::RenderWindow& window) override;
-    virtual void display(sf::RenderWindow& window) override;
+    void syncPosition();
+
+    virtual void update(const double& delta_time) override;
+    void control(const double& delta_time);
+    void interpolateReceivedMovement();
+    virtual void display(sf::RenderWindow &window) override;
 
     int health{100};
 
-    float pos_x{0}, pos_y{0};
+    Transform transform{};
     std::string name;
-};
 
+    Synced &synced;
+
+
+    std::array<std::tuple<Transform, std::chrono::time_point<std::chrono::system_clock>>, 2> received_messages;
+    std::size_t received_messages_count{0};
+    Transform last_transform_on_message_arrival;
+    
+    sf::Texture hexagon;
+};
 
 inline auto print_rpc = network::MemberRPC<&Player::print>;
 inline auto set_health_rpc = network::MemberRPC<&Player::setHealth>;
-
-template class network::Synced<Player>;
+inline auto update_position_rpc = network::MemberRPC<&Player::updatePosition>;

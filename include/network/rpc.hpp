@@ -10,10 +10,11 @@
 #include <type_traits>
 #include <any>
 #include <vector>
+#include <game_object.hpp>
 
 namespace network
 {
-    inline std::map<unsigned int, std::vector<std::any>> synced_objects;
+    inline std::map<unsigned int, std::vector<GameObject*>> synced_objects;
 
     typedef uint32_t rpc_message_length_t;
     typedef uint32_t rpc_id_t;
@@ -29,6 +30,8 @@ namespace network
         const unsigned int AllClients = Me | Clients; 
         const unsigned int AllClientsBuffered = AllClients | Buffered; 
         const unsigned int ServerBuffered = Server | Buffered; 
+        const unsigned int All = AllClients | Server; 
+        const unsigned int AllBuffered = All | Buffered; 
     }
 
     class RPCBase
@@ -115,13 +118,12 @@ namespace network
         }
     };
 
-    template <typename T>
     class Synced;
 
     template <typename Member, std::size_t... Is, typename Tuple, typename Func>
-    constexpr inline void call_member(const Tuple &t, Func &&f, std::index_sequence<Is...>, network::Synced<Member> *member_pointer)
+    constexpr inline void call_member(const Tuple &t, Func &&f, std::index_sequence<Is...>, Member *member_pointer)
     {
-        std::invoke(f, &member_pointer->t, std::get<2 + Is>(t)...);
+        std::invoke(f, member_pointer, std::get<2 + Is>(t)...);
     }
 
     template <class Sig>
@@ -147,10 +149,11 @@ namespace network
                      {
                          using member = typename member_function_datagram<decltype(function)>::member_class;
                          const auto &objects_list = network::synced_objects[std::get<0>(data.getData())];
-                         const auto &any = objects_list[std::get<1>(data.getData())];
-                         network::Synced<member> *member_pointer = std::any_cast<network::Synced<member> *>(any);
+                         GameObject* game_object = objects_list[std::get<1>(data.getData())];
+                         member* component = &game_object->getComponent<member>();
 
-                         call_member(data.getData(), function, std::make_index_sequence<member_function_datagram<decltype(function)>::size>{}, member_pointer);
+                        // std::cout << typeid(member).name() << "\n";
+                         call_member(data.getData(), function, std::make_index_sequence<member_function_datagram<decltype(function)>::size>{}, component);
                      }>
         MemberRPC;
 

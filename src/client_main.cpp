@@ -1,34 +1,25 @@
 
 
-#include <iostream>
 #include <network/client.hpp>
 #include <network/network_manager.hpp>
+#include <scenes/game.hpp>
 
-#include "player.hpp"
-#include "game.hpp"
-#include <network/synced.hpp>
-#include <thread>
-
+#include "window_manager.hpp"
+#include <scenes/menu.hpp>
+#include <scenes/editor.hpp>
+#include <X11/Xlib.h>
 int main(int argc, char **argv)
 {
-    {
-    network::Client client{"127.0.0.1", 2000};
+    XInitThreads();
+    WindowManager window_manager{};
+    Scene::Menu menu{window_manager};
+    Scene::Editor build{window_manager};
 
-    {
+    window_manager.scene = &menu;
 
-        network::NetworkManager manager{client};
-
-        {
-
-            Game game{manager};
-
-            game.run();
-            std::cout << __FILE__ << ":" << __LINE__ << std::endl;
-        }
-
-        std::cout << __FILE__ << ":" << __LINE__ << std::endl;
-    }
-    std::cout << __FILE__ << ":" << __LINE__ << std::endl;
-    }
-    std::cout << __FILE__ << ":" << __LINE__ << std::endl;
+    window_manager.start();
+    // network::Client client{"127.0.0.1", 2000};
+    // network::NetworkManager manager{client};
+    // Game game{manager};
+    // game.run();
 }

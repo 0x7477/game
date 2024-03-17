@@ -2,9 +2,7 @@
 #include <network/datagram.hpp>
 
 #include <network/network_manager.hpp>
-#include <network/synced.hpp>
-
-#include "game.hpp"
+#include <scenes/game.hpp>
 
 int main(int argc, char **argv)
 {
