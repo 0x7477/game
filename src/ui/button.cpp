@@ -4,16 +4,21 @@ template <>
 void UI::Button::display<UI::Button::State::Normal>(sf::RenderWindow &window)
 {
     const auto& rect = layout.getRect();
-    sf::RectangleShape background(sf::Vector2f(rect.width, rect.height));
-    background.setFillColor(background_color);
+    background.setSize({rect.width, rect.height});
     background.setPosition(rect.x, rect.y);
+    background.setOutlineThickness(0);
     window.draw(background);
 }
 
 template <>
 void UI::Button::display<UI::Button::State::Hover>(sf::RenderWindow &window)
 {
-    display<Normal>(window);
+    const auto& rect = layout.getRect();
+    background.setSize({rect.width, rect.height});
+    background.setOutlineColor(sf::Color::Black);
+    background.setOutlineThickness(10);
+    background.setPosition(rect.x, rect.y);
+    window.draw(background);
 }
 
 template <>
@@ -24,9 +29,9 @@ void UI::Button::display<UI::Button::State::Pressed>(sf::RenderWindow &window)
 
 void UI::Button::draw(sf::RenderWindow &window)
 {
-    const auto mousePos = sf::Mouse::getPosition(window);
+    const auto mouse_pos = sf::Mouse::getPosition(window);
 
-    const auto hover = layout.getRect().contains(mousePos.x, mousePos.y);
+    const auto hover = layout.getRect().contains(mouse_pos.x, mouse_pos.y);
     const auto clicked = sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
 
     if (!hover)

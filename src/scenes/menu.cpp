@@ -14,7 +14,7 @@ void Scene::Menu::run()
 {
     auto &window = window_manager.window;
 
-    window.clear();
+    window.clear(sf::Color(35,45,55));
     play_button.draw(window);
     editor_button.draw(window);
     exit_button.draw(window);

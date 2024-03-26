@@ -1,6 +1,8 @@
 BUILD_DIR := build
 EXECUTABLE := game
 
+MAKEFLAGS += --no-print-directory
+
 # Main target
 all: $(EXECUTABLE)
 

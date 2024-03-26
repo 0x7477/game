@@ -5,7 +5,7 @@
 #include "resource_loader.hpp"
 
 Player::Player(GameObject *game_object, const std::string &name)
-    : Script{game_object}, name{name}, synced{game_object->getComponent<Synced>()}, hexagon{ResourceLoader<sf::Texture>::get("hexagon.png")}
+    : Script{game_object}, name{name}, synced{game_object->getComponent<Synced>()}, hexagon{image_resources.get("hexagon.png")}
 {
 }
 

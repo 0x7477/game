@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <SFML/Graphics.hpp>
 #include <any>
+#include <iostream>
 
 template<typename T>
 class ResourceLoader
@@ -11,9 +12,12 @@ class ResourceLoader
     ResourceLoader(const std::string& path)
     {
         const std::filesystem::path resources_folder ("resources/");
-        for(const auto& file : std::filesystem::directory_iterator(resources_folder/path))
+        for(const auto& file : std::filesystem::recursive_directory_iterator(resources_folder/path))
         {
+            if(file.is_directory()) 
+                continue;
             T resource;
+
             resource.loadFromFile(file.path().string());
             resources[file.path().filename().string()] = resource;
         }
@@ -22,6 +26,12 @@ class ResourceLoader
 
     static T& get(const std::string& name)
     {
+        if(!resources.contains(name))
+        {
+            std::cerr << "unknown resource: " << name << "\n";
+            return resources["missing.png"];
+        }
+        
         return resources[name];
     }
 

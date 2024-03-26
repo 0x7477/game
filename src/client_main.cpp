@@ -8,8 +8,12 @@
 #include <scenes/menu.hpp>
 #include <scenes/editor.hpp>
 #include <X11/Xlib.h>
+#include <spaceship_part.hpp>
+
 int main(int argc, char **argv)
 {
+
+    
     XInitThreads();
     WindowManager window_manager{};
     Scene::Menu menu{window_manager};
@@ -22,4 +26,6 @@ int main(int argc, char **argv)
     // network::NetworkManager manager{client};
     // Game game{manager};
     // game.run();
+
+    return 0;
 }
