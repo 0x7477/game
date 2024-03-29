@@ -1,37 +1,22 @@
 #pragma once
 #include <cstdint>
-#include <magic_enum.hpp>
-#include <iostream>
 
-namespace wfc
+typedef uint8_t TileId; 
+
+struct Tile
 {
-    const unsigned int maximum_number_of_states{255};
-    typedef unsigned char entropy_t;
+    Tile(TileId id)
+    : id{id}{};
 
-    enum TileType
+    operator TileId () const
     {
-        Unknown = 0,
-        Black,
-        White
-    };
+        return id;
+    }
 
-    class Tile
+    operator int () const
     {
-    public:
-        Tile() : type{Unknown} {}
-        Tile(const TileType &type) : type{type} {}
-        Tile(const unsigned int &type) : type{(uint8_t)type} {}
+        return id;
+    }
 
-        friend std::ostream &operator<<(std::ostream &os, const Tile &tile)
-        {
-            return os << (int)tile.type; // << magic_enum::enum_name(tile.type);
-        }
-
-        operator uint8_t() const
-        {
-            return (uint8_t)type;
-        }
-
-        uint8_t type;
-    };
-}
+    TileId id;
+};

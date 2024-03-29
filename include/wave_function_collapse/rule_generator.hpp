@@ -1,112 +1,147 @@
 #pragma once
-#include <string>
-#include <png.h>
-#include <fstream>
-#include <iostream>
-#include <memory>
-#include <set>
+#include "pattern.hpp"
+#include "tile_image.hpp"
 
-#include "rule.hpp"
-
+#include "wave.hpp"
 namespace wfc
 {
-class RuleGenerator
-{
-public:
-    RuleGenerator(const std::string &path)
+    class RuleGenerator
     {
-        readImage(path);
-    }
-
-
-    unsigned int getTile(const unsigned int& x,const  unsigned int& y)
-    {
-        return pixel[x + y* width];
-    }
-
-    Rule generateRule(const unsigned int& x1, const unsigned int& y1,const unsigned int& x2,const  unsigned int& y2)
-    {
-        return Rule{Tile{getTile(x1,y1)}, Tile{getTile(x2,y2)}, Direction{(int8_t)(x2-x1), (int8_t)(y2-y1)}};
-    }
-
-    std::vector<Rule> generateRules(const int &kernel_size)
-    {
-        std::set<Rule> rules{};
-
-        for (unsigned int y = 0; y < height; y++)
+    public:
+        RuleGenerator(const std::string &path, const std::size_t &kernel_size)
+            : image(path), kernel_size{kernel_size}
         {
-            for (unsigned int x = 0; x < width; x++)
+            image.draw();
+            generatePatterns();
+        }
+
+        void addPattern(const unsigned int &x, const unsigned int &y)
+        {
+            const Pattern pattern(image, kernel_size, x, y, Pattern::Configuration{Pattern::DEG0, Pattern::None});
+            // pattern.draw();
+            
+            const auto hash = pattern.getHash();
+
+            if (patterns.contains(hash))
             {
-                for (int i = -kernel_size; i <= kernel_size; i++)
+                pattern_frequency[hash]++;
+                return;
+            }
+
+            pattern_frequency[hash] = 1;
+            patterns[hash] = pattern;
+        }
+
+        void generatePatterns()
+        {
+            for (auto x{0u}; x <= image.width - kernel_size; x++)
+                for (auto y{0u}; y <= image.height - kernel_size; y++)
+                    addPattern(x, y);
+
+            std::cout << "found " << patterns.size() << " unique patterns\n";
+            checkPatternAdjacency();
+        }
+
+        bool checkIfPatternsOverlap(const Pattern &pattern1, const Pattern &pattern2, const int &dx, const int &dy)
+        {
+            const int x_min{std::max(0, dx)}, x_max = std::min(kernel_size, kernel_size + dx);
+            const int y_min{std::max(0, dy)}, y_max = std::min(kernel_size, kernel_size + dy);
+
+            for (auto y{y_min}; y < y_max; y++)
+            {
+                for (auto x{x_min}; x < x_max; x++)
                 {
-                    for (int j = -kernel_size; j <= kernel_size; j++)
+                    const auto x1 = x;
+                    const auto y1 = y - dy;
+                    const auto x2 = x - dx;
+                    const auto y2 = y;
+                    if (pattern1[x1, y1] != pattern2[x2, y2])
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
+        void checkPatternAdjacency()
+        {
+            const std::vector<std::tuple<int, int>> directions{{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
+
+            std::size_t num_of_adjacency_rules{0};
+            for (const auto &[_, source_pattern] : patterns)
+            {
+                for (const auto &[_, neighbour_pattern] : patterns)
+                {
+                    for (std::size_t direction{0}; direction < 4; direction++)
                     {
-                        if(!i && !j) continue;
+                        const auto [dx, dy] = directions[direction];
+                        const auto patterns_overlap{checkIfPatternsOverlap(source_pattern, neighbour_pattern, dx, dy)};
+                        if (!patterns_overlap)
+                            continue;
 
-                        if(x+i < 0 || x+i >= width) continue;
-                        if(y+j < 0 || y+j >= height) continue;
+                        adjacency_rules[direction][source_pattern.getHash()].push_back(neighbour_pattern.getHash());
 
-                        rules.insert(generateRule(x,y,x+i,y+j));
-                        rules.insert(generateRule(x+i,y+j,x,y));
+                        num_of_adjacency_rules++;
                     }
                 }
             }
+
+            std::cout << "found " << num_of_adjacency_rules << " adjacency rules\n";
         }
-        for(const auto& rule: rules)
-            std::cout << rule << "\n";
 
-        return std::vector<Rule>{rules.begin(), rules.end()};
-    }
-
-    void readImage(const std::string &path)
-    {
-        auto file_deleter = [](FILE *file)
-        { if (file) fclose(file); };
-        const std::unique_ptr<FILE, decltype(file_deleter)> image(std::fopen(path.c_str(), "rb"), file_deleter);
-
-        png_structp png_ptr{png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)};
-        png_infop info_ptr = png_create_info_struct(png_ptr);
-        png_init_io(png_ptr, image.get());
-        png_read_info(png_ptr, info_ptr);
-
-        width = png_get_image_width(png_ptr, info_ptr);
-        height = png_get_image_height(png_ptr, info_ptr);
-
-        pixel.reserve(width * height);
-
-        png_bytep *row_pointers = new png_bytep[height];
-        for (unsigned int y = 0; y < height; y++)
-            row_pointers[y] = new png_byte[png_get_rowbytes(png_ptr, info_ptr)];
-
-        png_read_image(png_ptr, row_pointers);
-
-        for (unsigned int y = 0; y < height; y++)
+        HyperState createInitState()
         {
-            for (unsigned int x = 0; x < width; x++)
-            {
-                png_bytep px = &(row_pointers[y][x * 4]);
-
-                const std::tuple rgb{px[0], px[1], px[2]};
-
-                if (!colors.contains(rgb))
-                    colors[rgb] = ++max_tile;
-
-                pixel[x + y * width] = colors[rgb];
-                std::cout << pixel[x + y * width] << " ";
-            }
-            std::cout << std::endl;
+            return {patterns.size()};
         }
 
-        png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+        void generateImage(const unsigned int &width, const unsigned int &height)
+        {
+            std::vector<PatternInfo> infos;
 
-        for (unsigned int y = 0; y < height; y++)
-            delete[] row_pointers[y];
-        delete[] row_pointers;
-    }
+            const auto num_of_patterns = (image.width - kernel_size) * (image.height - kernel_size);
 
-    unsigned int max_tile{0};
-    unsigned int width, height;
-    std::vector<unsigned int> pixel;
-    std::map<std::tuple<png_byte, png_byte, png_byte>,unsigned int> colors;
-};
+            std::size_t pattern_id{0};
+            for (auto &[hash, pattern] : patterns)
+            {
+                const auto probability{(float)pattern_frequency[hash] / num_of_patterns};
+                infos.push_back(PatternInfo{&pattern, pattern_id++, hash, probability, {}});
+            }
+
+            for (auto &info : infos)
+            {
+                std::array<std::vector<PatternInfo *>, 4> impossible_adjacent_patterns;
+
+                for (auto direction{0u}; direction < 4; direction++)
+                {
+                    for (auto &neighbour : infos)
+                    {
+                        bool is_adjacency_possible = false;
+                        
+                        for (const auto adjacent_patterns : adjacency_rules[direction][info.hash])
+                        {
+                            if (neighbour.hash != adjacent_patterns)
+                                continue;
+                            
+                            is_adjacency_possible = true;
+                            break;
+                        }
+
+                        if(!is_adjacency_possible)
+                            info.impossible_adjacent_patterns[direction].push_back(&neighbour);
+
+                    }
+                }
+            }
+
+            Wave wave(width, height, createInitState(), infos);
+            const auto success = wave.run();
+            std::cout << "success: " << success << "\n";
+        }
+
+        std::array<std::map<unsigned int, std::vector<unsigned int>>, 4> adjacency_rules;
+        std::map<unsigned int, Pattern> patterns{};
+        std::map<unsigned int, std::size_t> pattern_frequency{};
+        TileImage image;
+        std::size_t kernel_size;
+    };
 }
