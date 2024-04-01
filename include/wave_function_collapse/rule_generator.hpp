@@ -3,6 +3,7 @@
 #include "tile_image.hpp"
 
 #include "wave.hpp"
+#include "direction.hpp"
 namespace wfc
 {
     class RuleGenerator
@@ -11,35 +12,40 @@ namespace wfc
         RuleGenerator(const std::string &path, const std::size_t &kernel_size)
             : image(path), kernel_size{kernel_size}
         {
-            image.draw();
+            // image.draw();
             generatePatterns();
+            checkPatternAdjacency();
         }
 
         void addPattern(const unsigned int &x, const unsigned int &y)
         {
             const Pattern pattern(image, kernel_size, x, y, Pattern::Configuration{Pattern::DEG0, Pattern::None});
-            // pattern.draw();
-            
+
             const auto hash = pattern.getHash();
 
-            if (patterns.contains(hash))
-            {
-                pattern_frequency[hash]++;
+            if (!pattern_indexes.contains(hash))
+            { // we found a new pattern!
+
+                const auto index = pattern_indexes.size();
+                pattern_indexes[hash] = index;
+
+                patterns.push_back(pattern);
+                pattern_frequency.push_back(1);
                 return;
             }
+            // this pattern already exists
 
-            pattern_frequency[hash] = 1;
-            patterns[hash] = pattern;
+            const auto index = pattern_indexes[hash];
+            pattern_frequency[index]++;
         }
 
         void generatePatterns()
         {
-            for (auto x{0u}; x <= image.width - kernel_size; x++)
-                for (auto y{0u}; y <= image.height - kernel_size; y++)
+            for (auto y{0u}; y <= image.height - kernel_size; y++)
+                for (auto x{0u}; x <= image.width - kernel_size; x++)
                     addPattern(x, y);
 
             std::cout << "found " << patterns.size() << " unique patterns\n";
-            checkPatternAdjacency();
         }
 
         bool checkIfPatternsOverlap(const Pattern &pattern1, const Pattern &pattern2, const int &dx, const int &dy)
@@ -65,22 +71,22 @@ namespace wfc
 
         void checkPatternAdjacency()
         {
-            const std::vector<std::tuple<int, int>> directions{{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
-
             std::size_t num_of_adjacency_rules{0};
-            for (const auto &[_, source_pattern] : patterns)
+
+            for (std::size_t source_pattern_id{0u}; source_pattern_id < patterns.size(); source_pattern_id++)
             {
-                for (const auto &[_, neighbour_pattern] : patterns)
+                adjacencies.push_back({});
+
+                for (std::size_t direction{0}; direction < 4; direction++)
                 {
-                    for (std::size_t direction{0}; direction < 4; direction++)
+                    for (std::size_t neighbour_pattern_id{0u}; neighbour_pattern_id < patterns.size(); neighbour_pattern_id++)
                     {
                         const auto [dx, dy] = directions[direction];
-                        const auto patterns_overlap{checkIfPatternsOverlap(source_pattern, neighbour_pattern, dx, dy)};
+                        const auto patterns_overlap{checkIfPatternsOverlap(patterns[source_pattern_id], patterns[neighbour_pattern_id], dx, -dy)};
                         if (!patterns_overlap)
                             continue;
 
-                        adjacency_rules[direction][source_pattern.getHash()].push_back(neighbour_pattern.getHash());
-
+                        adjacencies[source_pattern_id][direction].push_back(neighbour_pattern_id);
                         num_of_adjacency_rules++;
                     }
                 }
@@ -89,58 +95,43 @@ namespace wfc
             std::cout << "found " << num_of_adjacency_rules << " adjacency rules\n";
         }
 
-        HyperState createInitState()
-        {
-            return {patterns.size()};
-        }
-
         void generateImage(const unsigned int &width, const unsigned int &height)
         {
             std::vector<PatternInfo> infos;
 
-            const auto num_of_patterns = (image.width - kernel_size) * (image.height - kernel_size);
+            const auto num_of_patterns = (image.width + 1 - kernel_size) * (image.height + 1 - kernel_size);
 
-            std::size_t pattern_id{0};
-            for (auto &[hash, pattern] : patterns)
+            for (std::size_t pattern{0u}; pattern < patterns.size(); pattern++)
             {
-                const auto probability{(float)pattern_frequency[hash] / num_of_patterns};
-                infos.push_back(PatternInfo{&pattern, pattern_id++, hash, probability, {}});
+                const auto probability{(float)pattern_frequency[pattern] / num_of_patterns};
+                infos.push_back(PatternInfo{&patterns[pattern], pattern, 0, probability, {}});
             }
 
             for (auto &info : infos)
             {
-                std::array<std::vector<PatternInfo *>, 4> impossible_adjacent_patterns;
+                std::array<std::vector<PatternInfo *>, 4> possible_adjacent_patterns;
 
                 for (auto direction{0u}; direction < 4; direction++)
                 {
-                    for (auto &neighbour : infos)
+                    for (const auto adjacent_pattern : adjacencies[info.id][direction])
                     {
-                        bool is_adjacency_possible = false;
-                        
-                        for (const auto adjacent_patterns : adjacency_rules[direction][info.hash])
-                        {
-                            if (neighbour.hash != adjacent_patterns)
-                                continue;
-                            
-                            is_adjacency_possible = true;
-                            break;
-                        }
-
-                        if(!is_adjacency_possible)
-                            info.impossible_adjacent_patterns[direction].push_back(&neighbour);
-
+                        info.possible_adjacent_patterns[direction].push_back(&infos[adjacent_pattern]);
                     }
                 }
             }
 
-            Wave wave(width, height, createInitState(), infos);
+            const std::size_t seed{0};
+
+            Wave wave(width, height, kernel_size, infos, seed);
             const auto success = wave.run();
+
             std::cout << "success: " << success << "\n";
         }
 
-        std::array<std::map<unsigned int, std::vector<unsigned int>>, 4> adjacency_rules;
-        std::map<unsigned int, Pattern> patterns{};
-        std::map<unsigned int, std::size_t> pattern_frequency{};
+        std::map<unsigned int, std::size_t> pattern_indexes{};
+        std::vector<Pattern> patterns{};
+        std::vector<std::size_t> pattern_frequency{};
+        std::vector<std::array<std::vector<std::size_t>, 4>> adjacencies{};
         TileImage image;
         std::size_t kernel_size;
     };
