@@ -8,7 +8,7 @@
 #include <cassert>
 #include <iostream>
 #include "direction.hpp"
-
+#include <expected>
 class HyperState
 {
 public:
@@ -23,21 +23,9 @@ public:
                 compatibilities[pattern][direction] = pattern_info[pattern].possible_adjacent_patterns[reverse_directions[direction]].size();
     }
 
-    float getProbabilitySum(const std::vector<PatternInfo> &pattern_infos) const
-    {
-        float probability_sum = 0;
-        for (std::size_t i{0}; i < pattern_infos.size(); i++)
-            probability_sum += hyperstates[i] ? pattern_infos[i].probability : 0;
-
-        return probability_sum;
-    }
-
     float getEntropy(const std::vector<PatternInfo> &pattern_infos) const
     {
-        if (pattern)
-            return 100000;
-
-        const auto normalizer = 1 / getProbabilitySum(pattern_infos);
+        const auto normalizer = 1 / sum;
         float entropy = 0.0;
 
         for (std::size_t i{0}; i < pattern_infos.size(); i++)
@@ -52,11 +40,9 @@ public:
         return entropy;
     }
 
-    void collapse(const std::vector<PatternInfo> &pattern_infos, std::minstd_rand &gen)
+    std::size_t collapse(const std::vector<PatternInfo> &pattern_infos, std::minstd_rand &gen)
     {
         assert(!pattern);
-
-        const auto sum = getProbabilitySum(pattern_infos);
 
         std::uniform_real_distribution<> dis(0, sum);
 
@@ -82,20 +68,8 @@ public:
                 continue;
             compatibilities[c] = {0, 0, 0, 0};
         }
-    }
 
-    std::string display(const std::vector<PatternInfo> &pattern_infos)
-    {
-        if (!pattern)
-            return " ";
-
-        return std::to_string((int)(*pattern_infos[*pattern].pattern)[1, 1]);
-    }
-
-    std::size_t getPattern() const
-    {
-        assert(pattern);
-        return *pattern;
+        return selected_index;
     }
 
     bool decrementPatternPossibility(const std::size_t &pattern, const std::size_t &direction)
@@ -165,6 +139,13 @@ public:
     float getEntropy()
     {
         return entropy;
+    }
+
+    std::expected<bool,bool> isCollapsed()
+    {
+        if(possible_pattern_count <= 0)
+            return std::unexpected(false);
+        return possible_pattern_count == 1;
     }
 
     // private:

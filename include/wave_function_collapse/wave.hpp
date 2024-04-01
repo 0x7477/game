@@ -8,13 +8,11 @@
 #include "direction.hpp"
 #include <ranges>
 #include <concepts>
+#include <expected>
 
-struct EntropyMemoisation
+enum class ObservationResult
 {
-    std::vector<double> plogp_sum; // The sum of p'(pattern) * log(p'(pattern)).
-    std::vector<double> sum;       // The sum of p'(pattern).
-    std::vector<double> log_sum;   // The log of sum.
-    std::vector<double> entropy;   // The entropy of the cell.
+    success, has_invalid_state
 };
 
 class Wave
@@ -84,21 +82,24 @@ public:
         std::cout << index << " memoisation.entropy[index] " << states[index].getEntropy() << "\n";
     }
 
-    int get_min_entropy()
+    std::expected<int, ObservationResult> getIndexOfMinimumEntropy()
     {
         std::uniform_real_distribution<> dis(0, min_abs_half_plogp);
 
         // The minimum entropy (plus a small noise)
         double min = std::numeric_limits<double>::infinity();
-        int argmin = -1;
+        std::optional<int> minimum_index = {};
 
-        for (unsigned i = 0; i < states.size(); i++)
+        for (std::size_t i{0u}; i < states.size(); i++)
         {
-
             // If the cell is decided, we do not compute the entropy (which is equal
             // to 0).
-            double nb_patterns_local = states[i].possible_pattern_count;
-            if (nb_patterns_local == 1)
+
+            const auto collapsed = states[i].isCollapsed();
+
+            if(!collapsed.has_value())
+                return std::unexpected(ObservationResult::has_invalid_state);
+            if (*collapsed)
                 continue;
 
             // Otherwise, we take the memoised entropy.
@@ -119,20 +120,20 @@ public:
                 if (entropy + noise < min)
                 {
                     min = entropy + noise;
-                    argmin = i;
+                    minimum_index = i;
                 }
             }
         }
+        if(!minimum_index)
+            return std::unexpected(ObservationResult::success);
 
-        return argmin;
+        return *minimum_index;
     }
 
     void collapse(const std::size_t index)
     {
         std::cout << "collapsed " << index << std::endl;
-        states[index].collapse(pattern_info, gen);
-
-        const auto collapsed_pattern = states[index].getPattern();
+        const auto collapsed_pattern = states[index].collapse(pattern_info, gen);
         std::cout << "to " << collapsed_pattern << "\n";
 
         for (std::size_t pattern{0u}; pattern < pattern_info.size(); pattern++)
@@ -144,32 +145,44 @@ public:
                 continue;
 
             std::cout << "pushing to stack " << index << " " << pattern << "\n";
+            updatedRemovedPattern(index, pattern);
+        }
+    }
+
+    void updatedRemovedPattern(const std::size_t& index, const std::size_t& pattern)
+    {
             propagation_stack.push({index, pattern});
 
             updateEntropy(index, pattern);
-        }
+
     }
 
     bool run()
     {
         for (auto i{0u}; i < width * height; i++)
         {
-            const auto index = get_min_entropy();
-
-            if (index == -1)
+            const auto index = getIndexOfMinimumEntropy();
+            if (!index)
             {
                 drawProgress();
-                return true;
+                return index.error() == ObservationResult::success ;
             }
-            collapse(index);
-            while (propagation_stack.size() > 0)
-            {
-                const auto [index, pattern] = propagation_stack.top();
-                propagation_stack.pop();
-                updateStates(index, pattern);
-            }
+
+            collapse(*index);
+            propagate();
+
         }
         return true;
+    }
+
+    void propagate()
+    {
+        while (propagation_stack.size() > 0)
+        {
+            const auto [index, pattern] = propagation_stack.top();
+            propagation_stack.pop();
+            updateStates(index, pattern);
+        }
     }
 
     void drawProgress()
@@ -208,8 +221,8 @@ public:
 
     bool AreChordsInBound(const std::tuple<std::size_t, std::size_t> &chords)
     {
-        const auto [x, y] = chords;
-        return x >= 0 && x < width && y >= 0 && y < height;
+        const auto& [x, y] = chords;
+        return x < width && y < height; // negative values overflow to high values
     }
 
     std::vector<std::tuple<std::size_t, std::size_t>> getNeighbors(const std::size_t &index)
@@ -221,14 +234,13 @@ public:
 
         for (auto direction{0u}; direction < 4; direction++)
         {
-            const auto [dx, dy] = directions[direction];
-            const int new_x = x + dx;
-            const int new_y = y + dy;
+            const auto& [dx, dy] = directions[direction];
+            const std::tuple new_chords{x + dx,y + dy};
 
-            if (!AreChordsInBound({new_x, new_y}))
+            if (!AreChordsInBound(new_chords))
                 continue;
 
-            result.push_back({direction, getIndexFromChords({new_x, new_y})});
+            result.push_back({direction, getIndexFromChords(new_chords)});
         }
 
         return result;
@@ -251,8 +263,8 @@ public:
 
                 std::cout << "pushing to stack " << neighbour_index << " " << pattern_dependency << "\n";
 
-                propagation_stack.push({neighbour_index, pattern_dependency});
-                updateEntropy(neighbour_index, pattern_dependency);
+                updatedRemovedPattern(neighbour_index, pattern_dependency);
+
 
                 if (states[neighbour_index].isStateImpossible())
                 {
