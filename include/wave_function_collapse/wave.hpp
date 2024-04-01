@@ -12,7 +12,8 @@
 
 enum class ObservationResult
 {
-    success, has_invalid_state
+    success,
+    has_invalid_state
 };
 
 class Wave
@@ -20,16 +21,13 @@ class Wave
 
 public:
     Wave(const std::size_t &width, const std::size_t &height, const std::size_t &kernel_size, const std::vector<PatternInfo> &pattern_info, const std::size_t &seed)
-        : width{width}, height{height}, kernel_size{kernel_size},
+        : width{width}, height{height}, kernel_size{kernel_size},number_of_pattern{pattern_info.size()},
           pattern_info{pattern_info},
           pattern_frequencies{getPatternFrequencies()},
           p_log_p_pattern_frequencies{getPLogPPatternFrequencies()},
           min_abs_half_plogp{getAbsoluteHalfOfMinimumPLogPFrequency()},
           states(width * height, createInitialHyperState()), gen(seed)
-    {
-
-        std::cout << "min_abs_half_plogp " << min_abs_half_plogp << "\n";
-    }
+    {}
 
     std::vector<float> getPatternFrequencies()
     {
@@ -73,58 +71,35 @@ public:
         return x + y * width;
     }
 
-    void updateEntropy(const std::size_t &index, const std::size_t &pattern)
-    {
-        std::cout << "set " << index << " pattern " << pattern << " value " << 0 << "\n";
-
-        states[index].updateEntropy(pattern_frequencies[pattern], p_log_p_pattern_frequencies[pattern]);
-
-        std::cout << index << " memoisation.entropy[index] " << states[index].getEntropy() << "\n";
-    }
-
     std::expected<int, ObservationResult> getIndexOfMinimumEntropy()
     {
         std::uniform_real_distribution<> dis(0, min_abs_half_plogp);
 
-        // The minimum entropy (plus a small noise)
         double min = std::numeric_limits<double>::infinity();
         std::optional<int> minimum_index = {};
 
         for (std::size_t i{0u}; i < states.size(); i++)
         {
-            // If the cell is decided, we do not compute the entropy (which is equal
-            // to 0).
-
             const auto collapsed = states[i].isCollapsed();
 
-            if(!collapsed.has_value())
+            if (!collapsed.has_value())
                 return std::unexpected(ObservationResult::has_invalid_state);
             if (*collapsed)
                 continue;
 
-            // Otherwise, we take the memoised entropy.
-            double entropy = states[i].getEntropy();
-            std::cout << i << " " << entropy << "\n";
+            const auto entropy = states[i].getEntropy();
+            if (entropy > min)
+                continue;
 
-            // We first check if the entropy is less than the minimum.
-            // This is important to reduce noise computation (which is not
-            // negligible).
-            if (entropy <= min)
-            {
+            const auto noise = dis(gen);
 
-                // Then, we add noise to decide randomly which will be chosen.
-                // noise is smaller than the smallest p * log(p), so the minimum entropy
-                // will always be chosen.
-                double noise = dis(gen);
-                std::cout << i << noise << "\n";
-                if (entropy + noise < min)
-                {
-                    min = entropy + noise;
-                    minimum_index = i;
-                }
-            }
+            if (entropy + noise >= min)
+                continue;
+
+            min = entropy + noise;
+            minimum_index = i;
         }
-        if(!minimum_index)
+        if (!minimum_index)
             return std::unexpected(ObservationResult::success);
 
         return *minimum_index;
@@ -132,11 +107,9 @@ public:
 
     void collapse(const std::size_t index)
     {
-        std::cout << "collapsed " << index << std::endl;
-        const auto collapsed_pattern = states[index].collapse(pattern_info, gen);
-        std::cout << "to " << collapsed_pattern << "\n";
+        const auto collapsed_pattern = states[index].collapse(pattern_frequencies, gen);
 
-        for (std::size_t pattern{0u}; pattern < pattern_info.size(); pattern++)
+        for (std::size_t pattern{0u}; pattern < number_of_pattern; pattern++)
         {
             if (pattern == collapsed_pattern)
                 continue;
@@ -144,17 +117,14 @@ public:
             if (!states[index].hyperstates[pattern])
                 continue;
 
-            std::cout << "pushing to stack " << index << " " << pattern << "\n";
             updatedRemovedPattern(index, pattern);
         }
     }
 
-    void updatedRemovedPattern(const std::size_t& index, const std::size_t& pattern)
+    void updatedRemovedPattern(const std::size_t &index, const std::size_t &pattern)
     {
-            propagation_stack.push({index, pattern});
-
-            updateEntropy(index, pattern);
-
+        propagation_stack.push({index, pattern});
+        states[index].updateEntropy(pattern_frequencies[pattern], p_log_p_pattern_frequencies[pattern]);
     }
 
     bool run()
@@ -163,14 +133,10 @@ public:
         {
             const auto index = getIndexOfMinimumEntropy();
             if (!index)
-            {
-                drawProgress();
-                return index.error() == ObservationResult::success ;
-            }
+                return index.error() == ObservationResult::success;
 
             collapse(*index);
             propagate();
-
         }
         return true;
     }
@@ -185,43 +151,43 @@ public:
         }
     }
 
-    void drawProgress()
-    {
-        drawImpossibleState(-1, -1);
-    }
+    // void drawProgress()
+    // {
+    //     drawImpossibleState(-1, -1);
+    // }
 
-    void drawImpossibleState(const std::size_t &collapsed_index, const std::size_t &impossible_index)
-    {
-        std::vector<std::string> tiles((std::size_t)width * height, " ");
+    // void drawImpossibleState(const std::size_t &collapsed_index, const std::size_t &impossible_index)
+    // {
+    //     std::vector<std::string> tiles((std::size_t)width * height, " ");
 
-        for (unsigned int y = 0; y < height - 2; y++)
-        {
-            for (unsigned int x = 0; x < width - 2; x++)
-                states[x + width * y].drawPatternIntoVector(pattern_info, tiles, x, y, width, kernel_size);
-        }
+    //     for (unsigned int y = 0; y < height - 2; y++)
+    //     {
+    //         for (unsigned int x = 0; x < width - 2; x++)
+    //             states[x + width * y].drawPatternIntoVector(pattern_info, tiles, x, y, width, kernel_size);
+    //     }
 
-        for (unsigned int y = 0; y < height; y++)
-        {
-            std::cout << "|";
-            for (unsigned int x = 0; x < width; x++)
-            {
-                const auto index = getIndexFromChords({x, y});
+    //     for (unsigned int y = 0; y < height; y++)
+    //     {
+    //         std::cout << "|";
+    //         for (unsigned int x = 0; x < width; x++)
+    //         {
+    //             const auto index = getIndexFromChords({x, y});
 
-                if (index == collapsed_index)
-                    std::cout << "\033[92m" << tiles[getIndexFromChords({x, y})] << "\033[0m ";
-                else if (index == impossible_index)
-                    std::cout << "\033[91m" << "X" << "\033[0m ";
-                else
-                    std::cout << tiles[getIndexFromChords({x, y})] << " ";
-            }
+    //             if (index == collapsed_index)
+    //                 std::cout << "\033[92m" << tiles[getIndexFromChords({x, y})] << "\033[0m ";
+    //             else if (index == impossible_index)
+    //                 std::cout << "\033[91m" << "X" << "\033[0m ";
+    //             else
+    //                 std::cout << tiles[getIndexFromChords({x, y})] << " ";
+    //         }
 
-            std::cout << "|" << std::endl;
-        }
-    }
+    //         std::cout << "|" << std::endl;
+    //     }
+    // }
 
     bool AreChordsInBound(const std::tuple<std::size_t, std::size_t> &chords)
     {
-        const auto& [x, y] = chords;
+        const auto &[x, y] = chords;
         return x < width && y < height; // negative values overflow to high values
     }
 
@@ -234,8 +200,8 @@ public:
 
         for (auto direction{0u}; direction < 4; direction++)
         {
-            const auto& [dx, dy] = directions[direction];
-            const std::tuple new_chords{x + dx,y + dy};
+            const auto &[dx, dy] = directions[direction];
+            const std::tuple new_chords{x + dx, y + dy};
 
             if (!AreChordsInBound(new_chords))
                 continue;
@@ -252,30 +218,22 @@ public:
         {
             for (const auto &pattern_dependency : pattern_info[pattern].possible_adjacent_patterns[direction])
             {
-                std::cout << "because of " << index << " " << pattern << " (direction: " << direction << "):\n";
-                std::cout << "value is currently  " << states[neighbour_index].compatibilities[pattern_dependency][direction] << "\n";
-                std::cout << "decrementing " << neighbour_index << " pattern " << pattern_dependency << " direction " << direction << "\n";
                 const auto pattern_no_longer_possible = states[neighbour_index].decrementPatternPossibility(pattern_dependency, direction);
-                std::cout << "value is now  " << states[neighbour_index].compatibilities[pattern_dependency][direction] << "\n";
 
                 if (!pattern_no_longer_possible)
                     continue;
 
-                std::cout << "pushing to stack " << neighbour_index << " " << pattern_dependency << "\n";
-
                 updatedRemovedPattern(neighbour_index, pattern_dependency);
-
-
-                if (states[neighbour_index].isStateImpossible())
-                {
-                    std::cout << neighbour_index << "\n";
-                    assert(false);
-                }
             }
         }
     }
 
-    const std::size_t width, height, kernel_size;
+    std::size_t operator[](const std::size_t& x, const std::size_t& y)
+    {
+        return states[getIndexFromChords({x,y})].getPattern();
+    }
+
+    const std::size_t width, height, kernel_size, number_of_pattern;
     const std::vector<PatternInfo> pattern_info;
     const std::vector<float> pattern_frequencies{};
     const std::vector<float> p_log_p_pattern_frequencies{};

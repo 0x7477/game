@@ -97,20 +97,48 @@ namespace wfc
 
         void generateImage(const unsigned int &width, const unsigned int &height)
         {
+
+            const std::size_t num_of_patterns = (image.width + 1 - kernel_size) * (image.height + 1 - kernel_size);
+            
+            std::vector<float> pattern_probabilities(num_of_patterns);
+            for (std::size_t pattern{0u}; pattern < patterns.size(); pattern++)
+                pattern_probabilities.push_back((float)pattern_frequency[pattern] / num_of_patterns);
+            
             std::vector<PatternInfo> infos;
 
-            const auto num_of_patterns = (image.width + 1 - kernel_size) * (image.height + 1 - kernel_size);
 
             for (std::size_t pattern{0u}; pattern < patterns.size(); pattern++)
             {
                 const auto probability{(float)pattern_frequency[pattern] / num_of_patterns};
-                infos.push_back(PatternInfo{&patterns[pattern], pattern, probability, adjacencies[pattern]});
+                infos.push_back(PatternInfo{NULL, 0, probability, adjacencies[pattern]});
             }
 
             const std::size_t seed{0};
 
-            Wave wave(width, height, kernel_size, infos, seed);
+            Wave wave(width - kernel_size + 1, height - kernel_size + 1, kernel_size, infos, seed);
             const auto success = wave.run();
+
+            for(auto y{0u}; y <= height- kernel_size; y++ )
+            {
+                for(auto x{0u}; x <= width- kernel_size; x++ )
+                    std::cout << (int)patterns[wave[x,y]][0,0] << " ";
+                
+                for(auto x{1u}; x < kernel_size; x++ )
+                    std::cout << (int)patterns[wave[width-1- kernel_size,y]][x,0] << " ";
+
+                std::cout << "\n";
+            }
+            for(auto y{1u}; y < kernel_size; y++ )
+            {
+                for(auto x{0u}; x <= width- kernel_size; x++ )
+                    std::cout << (int)patterns[wave[x,height- kernel_size]][0,y] << " ";
+                
+                for(auto x{1u}; x < kernel_size; x++ )
+                    std::cout << (int)patterns[wave[width-1- kernel_size,height- kernel_size]][x,y] << " ";
+
+                std::cout << "\n";
+            }
+
 
             std::cout << "success: " << success << "\n";
         }
