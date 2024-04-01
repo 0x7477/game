@@ -104,20 +104,7 @@ namespace wfc
             for (std::size_t pattern{0u}; pattern < patterns.size(); pattern++)
             {
                 const auto probability{(float)pattern_frequency[pattern] / num_of_patterns};
-                infos.push_back(PatternInfo{&patterns[pattern], pattern, probability, {}});
-            }
-
-            for (auto &info : infos)
-            {
-                std::array<std::vector<PatternInfo *>, 4> possible_adjacent_patterns;
-
-                for (auto direction{0u}; direction < 4; direction++)
-                {
-                    for (const auto adjacent_pattern : adjacencies[info.id][direction])
-                    {
-                        info.possible_adjacent_patterns[direction].push_back(&infos[adjacent_pattern]);
-                    }
-                }
+                infos.push_back(PatternInfo{&patterns[pattern], pattern, probability, adjacencies[pattern]});
             }
 
             const std::size_t seed{0};

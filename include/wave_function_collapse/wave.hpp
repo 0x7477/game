@@ -27,8 +27,7 @@ public:
           pattern_frequencies{getPatternFrequencies()},
           p_log_p_pattern_frequencies{getPLogPPatternFrequencies()},
           min_abs_half_plogp{getAbsoluteHalfOfMinimumPLogPFrequency()},
-          init_state{createInitialHyperState()},
-          states(width * height, init_state), gen(seed)
+          states(width * height, createInitialHyperState()), gen(seed)
     {
 
         std::cout << "min_abs_half_plogp " << min_abs_half_plogp << "\n";
@@ -242,18 +241,18 @@ public:
             for (const auto &pattern_dependency : pattern_info[pattern].possible_adjacent_patterns[direction])
             {
                 std::cout << "because of " << index << " " << pattern << " (direction: " << direction << "):\n";
-                std::cout << "value is currently  " << states[neighbour_index].compatibilities[pattern_dependency->id][direction] << "\n";
-                std::cout << "decrementing " << neighbour_index << " pattern " << pattern_dependency->id << " direction " << direction << "\n";
-                const auto pattern_no_longer_possible = states[neighbour_index].decrementPatternPossibility(pattern_dependency->id, direction);
-                std::cout << "value is now  " << states[neighbour_index].compatibilities[pattern_dependency->id][direction] << "\n";
+                std::cout << "value is currently  " << states[neighbour_index].compatibilities[pattern_dependency][direction] << "\n";
+                std::cout << "decrementing " << neighbour_index << " pattern " << pattern_dependency << " direction " << direction << "\n";
+                const auto pattern_no_longer_possible = states[neighbour_index].decrementPatternPossibility(pattern_dependency, direction);
+                std::cout << "value is now  " << states[neighbour_index].compatibilities[pattern_dependency][direction] << "\n";
 
                 if (!pattern_no_longer_possible)
                     continue;
 
-                std::cout << "pushing to stack " << neighbour_index << " " << pattern_dependency->id << "\n";
+                std::cout << "pushing to stack " << neighbour_index << " " << pattern_dependency << "\n";
 
-                propagation_stack.push({neighbour_index, pattern_dependency->id});
-                updateEntropy(neighbour_index, pattern_dependency->id);
+                propagation_stack.push({neighbour_index, pattern_dependency});
+                updateEntropy(neighbour_index, pattern_dependency);
 
                 if (states[neighbour_index].isStateImpossible())
                 {
@@ -264,22 +263,13 @@ public:
         }
     }
 
-    HyperState &operator[](std::size_t x, std::size_t y)
-    {
-        return states[x + y * width];
-    }
+    const std::size_t width, height, kernel_size;
+    const std::vector<PatternInfo> pattern_info;
+    const std::vector<float> pattern_frequencies{};
+    const std::vector<float> p_log_p_pattern_frequencies{};
+    const float min_abs_half_plogp;
 
-    std::size_t width, height, kernel_size;
-    std::vector<PatternInfo> pattern_info;
-    std::vector<float> pattern_frequencies{};
-    std::vector<float> p_log_p_pattern_frequencies{};
-    float min_abs_half_plogp;
-    HyperState init_state;
     std::vector<HyperState> states;
-
     std::stack<std::tuple<std::size_t, std::size_t>> propagation_stack{};
-
-    // EntropyMemoisation memoisation;
-
     std::minstd_rand gen;
 };
