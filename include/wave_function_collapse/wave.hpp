@@ -6,14 +6,15 @@
 #include <queue>
 #include <stack>
 #include "direction.hpp"
+#include <ranges>
+#include <concepts>
 
 struct EntropyMemoisation
 {
-    std::vector<double> plogp_sum;     // The sum of p'(pattern) * log(p'(pattern)).
-    std::vector<double> sum;           // The sum of p'(pattern).
-    std::vector<double> log_sum;       // The log of sum.
-    std::vector<unsigned> nb_patterns; // The number of patterns present
-    std::vector<double> entropy;       // The entropy of the cell.
+    std::vector<double> plogp_sum; // The sum of p'(pattern) * log(p'(pattern)).
+    std::vector<double> sum;       // The sum of p'(pattern).
+    std::vector<double> log_sum;   // The log of sum.
+    std::vector<double> entropy;   // The entropy of the cell.
 };
 
 class Wave
@@ -21,33 +22,47 @@ class Wave
 
 public:
     Wave(const std::size_t &width, const std::size_t &height, const std::size_t &kernel_size, const std::vector<PatternInfo> &pattern_info, const std::size_t &seed)
-        : width{width}, height{height}, kernel_size{kernel_size}, init_state{pattern_info}, states(width * height, init_state), pattern_info{pattern_info}, gen(seed)
+        : width{width}, height{height}, kernel_size{kernel_size},
+          pattern_info{pattern_info},
+          pattern_frequencies{getPatternFrequencies()},
+          p_log_p_pattern_frequencies{getPLogPPatternFrequencies()},
+          min_abs_half_plogp{getAbsoluteHalfOfMinimumPLogPFrequency()},
+          init_state{createInitialHyperState()},
+          states(width * height, init_state), gen(seed)
     {
-        for (const auto &info : pattern_info)
-            pattern_frequencies.push_back(info.probability);
 
-        for (const auto &frequency : pattern_frequencies)
-            p_log_p_pattern_frequencies.push_back(frequency * log(frequency));
+        std::cout << "min_abs_half_plogp " << min_abs_half_plogp << "\n";
+    }
+
+    std::vector<float> getPatternFrequencies()
+    {
+        const auto frequencies = pattern_info | std::views::transform([](const PatternInfo &pattern)
+                                                                      { return pattern.probability; });
+        return {frequencies.begin(), frequencies.end()};
+    }
+    std::vector<float> getPLogPPatternFrequencies()
+    {
+        const auto p_log_p_frequencies = pattern_frequencies | std::views::transform([](const float &frequency)
+                                                                                     { return frequency * std::log(frequency); });
+        return {p_log_p_frequencies.begin(), p_log_p_frequencies.end()};
+    }
+
+    float getAbsoluteHalfOfMinimumPLogPFrequency()
+    {
+        float min_abs_half_plogp = std::numeric_limits<float>::max();
 
         for (const auto &p_log_p : p_log_p_pattern_frequencies)
             min_abs_half_plogp = std::min(min_abs_half_plogp, (float)std::abs(p_log_p / 2.0));
 
-        std::cout << "min_abs_half_plogp " << min_abs_half_plogp << "\n";
+        return min_abs_half_plogp;
+    }
 
-        double base_entropy = 0;
-        double base_s = 0;
-        for (unsigned i = 0; i < pattern_info.size(); i++)
-        {
-            base_entropy += p_log_p_pattern_frequencies[i];
-            base_s += pattern_frequencies[i];
-        }
-        double log_base_s = log(base_s);
-        double entropy_base = log_base_s - base_entropy / base_s;
-        memoisation.plogp_sum = std::vector<double>(width * height, base_entropy);
-        memoisation.sum = std::vector<double>(width * height, base_s);
-        memoisation.log_sum = std::vector<double>(width * height, log_base_s);
-        memoisation.nb_patterns = std::vector<unsigned>(width * height, static_cast<unsigned>(pattern_info.size()));
-        memoisation.entropy = std::vector<double>(width * height, entropy_base);
+    HyperState createInitialHyperState()
+    {
+        const auto base_entropy = std::accumulate(p_log_p_pattern_frequencies.begin(), p_log_p_pattern_frequencies.end(), 0.f);
+        const auto sum = std::accumulate(pattern_frequencies.begin(), pattern_frequencies.end(), 0.f);
+
+        return HyperState{pattern_info, base_entropy, sum};
     }
 
     std::tuple<std::size_t, std::size_t> getChordsFromIndex(const std::size_t &index)
@@ -65,15 +80,9 @@ public:
     {
         std::cout << "set " << index << " pattern " << pattern << " value " << 0 << "\n";
 
-        memoisation.plogp_sum[index] -= p_log_p_pattern_frequencies[pattern];
-        memoisation.sum[index] -= pattern_frequencies[pattern];
-        memoisation.log_sum[index] = log(memoisation.sum[index]);
-        memoisation.nb_patterns[index]--;
-        memoisation.entropy[index] =
-            memoisation.log_sum[index] -
-            memoisation.plogp_sum[index] / memoisation.sum[index];
+        states[index].updateEntropy(pattern_frequencies[pattern], p_log_p_pattern_frequencies[pattern]);
 
-        std::cout << index << " memoisation.entropy[index] " << memoisation.entropy[index] << "\n";
+        std::cout << index << " memoisation.entropy[index] " << states[index].getEntropy() << "\n";
     }
 
     int get_min_entropy()
@@ -89,13 +98,13 @@ public:
 
             // If the cell is decided, we do not compute the entropy (which is equal
             // to 0).
-            double nb_patterns_local = memoisation.nb_patterns[i];
+            double nb_patterns_local = states[i].possible_pattern_count;
             if (nb_patterns_local == 1)
                 continue;
 
             // Otherwise, we take the memoised entropy.
-            double entropy = memoisation.entropy[i];
-            std::cout << i << " " << memoisation.entropy[i] << "\n";
+            double entropy = states[i].getEntropy();
+            std::cout << i << " " << entropy << "\n";
 
             // We first check if the entropy is less than the minimum.
             // This is important to reduce noise computation (which is not
@@ -261,17 +270,16 @@ public:
     }
 
     std::size_t width, height, kernel_size;
+    std::vector<PatternInfo> pattern_info;
+    std::vector<float> pattern_frequencies{};
+    std::vector<float> p_log_p_pattern_frequencies{};
+    float min_abs_half_plogp;
     HyperState init_state;
     std::vector<HyperState> states;
-    std::vector<PatternInfo> pattern_info;
 
     std::stack<std::tuple<std::size_t, std::size_t>> propagation_stack{};
 
-    std::vector<float> pattern_frequencies{};
-    std::vector<float> p_log_p_pattern_frequencies{};
-
-    EntropyMemoisation memoisation;
-    float min_abs_half_plogp =  std::numeric_limits<float>::max();//99999999999999;
+    // EntropyMemoisation memoisation;
 
     std::minstd_rand gen;
 };

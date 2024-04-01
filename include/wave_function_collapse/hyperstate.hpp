@@ -8,14 +8,14 @@
 #include <cassert>
 #include <iostream>
 #include "direction.hpp"
-static std::random_device rd;
-static std::minstd_rand gen(0);
 
 class HyperState
 {
 public:
-    HyperState(const std::vector<PatternInfo> &pattern_info)
-        : hyperstates(pattern_info.size(), true),
+    HyperState(const std::vector<PatternInfo> &pattern_info, const float &base_entropy, const float &sum)
+        : sum{sum}, log_sum{std::log(sum)}, p_log_p_sum{base_entropy}, entropy{log_sum - base_entropy / sum},
+          possible_pattern_count(pattern_info.size()),
+          hyperstates(pattern_info.size(), true),
           compatibilities(pattern_info.size())
     {
         for (std::size_t pattern{0u}; pattern < pattern_info.size(); pattern++)
@@ -98,7 +98,6 @@ public:
         return *pattern;
     }
 
-
     bool decrementPatternPossibility(const std::size_t &pattern, const std::size_t &direction)
     {
         compatibilities[pattern][direction]--;
@@ -128,11 +127,11 @@ public:
     {
         if (!pattern)
         {
-            for(auto i{0u}; i < hyperstates.size(); i++)
+            for (auto i{0u}; i < hyperstates.size(); i++)
             {
-                if(!hyperstates[i]) 
-                continue;
-                
+                if (!hyperstates[i])
+                    continue;
+
                 assert(!pattern);
                 pattern = i;
             }
@@ -153,7 +152,24 @@ public:
             }
     }
 
+    void updateEntropy(const float &pattern_frequency, const float &p_log_p_pattern_frequency)
+    {
+        p_log_p_sum -= p_log_p_pattern_frequency;
+        sum -= pattern_frequency;
+        log_sum = std::log(sum);
+
+        possible_pattern_count--;
+        entropy = log_sum - p_log_p_sum / sum;
+    }
+
+    float getEntropy()
+    {
+        return entropy;
+    }
+
     // private:
+    float sum, log_sum, p_log_p_sum, entropy;
+    std::size_t possible_pattern_count;
     std::optional<std::size_t> pattern{};
     std::vector<bool> hyperstates;
     std::vector<std::array<int, 4>> compatibilities;

@@ -104,7 +104,7 @@ namespace wfc
             for (std::size_t pattern{0u}; pattern < patterns.size(); pattern++)
             {
                 const auto probability{(float)pattern_frequency[pattern] / num_of_patterns};
-                infos.push_back(PatternInfo{&patterns[pattern], pattern, 0, probability, {}});
+                infos.push_back(PatternInfo{&patterns[pattern], pattern, probability, {}});
             }
 
             for (auto &info : infos)
