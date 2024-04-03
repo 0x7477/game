@@ -12,7 +12,7 @@ namespace wfc
         RuleGenerator(const std::string &path, const std::size_t &kernel_size)
             : image(path), kernel_size{kernel_size}
         {
-            // image.draw();
+            image.draw();
             generatePatterns();
             checkPatternAdjacency();
         }
@@ -120,7 +120,12 @@ namespace wfc
                     std::cout << (int)patterns[wave[x,y]][0,0] << " ";
                 
                 for(auto x{1u}; x < kernel_size; x++ )
-                    std::cout << (int)patterns[wave[width-1- kernel_size,y]][x,0] << " ";
+                {
+                    // std::cout << "x " << x << " y " << y << "\n";
+                    // std::cout << "width-1- kernel_size " <<width-1- kernel_size << "\n";
+                    // std::cout << "wave[width-1- kernel_size,y] " <<wave[width-1- kernel_size,y] <<"\n";
+                    std::cout << (int)patterns[wave[width- kernel_size,y]][x,0] << " ";
+                }
 
                 std::cout << "\n";
             }
@@ -130,7 +135,7 @@ namespace wfc
                     std::cout << (int)patterns[wave[x,height- kernel_size]][0,y] << " ";
                 
                 for(auto x{1u}; x < kernel_size; x++ )
-                    std::cout << (int)patterns[wave[width-1- kernel_size,height- kernel_size]][x,y] << " ";
+                    std::cout << (int)patterns[wave[width- kernel_size,height- kernel_size]][x,y] << " ";
 
                 std::cout << "\n";
             }

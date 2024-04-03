@@ -18,6 +18,7 @@ class ResourceLoader
                 continue;
             T resource;
 
+            // std::cout << file.path().filename().string() << "\n";
             resource.loadFromFile(file.path().string());
             resources[file.path().filename().string()] = resource;
         }

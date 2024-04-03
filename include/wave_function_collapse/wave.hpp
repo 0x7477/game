@@ -27,6 +27,7 @@ public:
           min_abs_half_plogp{getAbsoluteHalfOfMinimumPLogPFrequency()},
           states(width * height, createInitialHyperState()), gen(seed)
     {
+        std::cout << "seed: " << seed << "\n";
     }
 
     std::vector<float> getPLogPPatternFrequencies()
