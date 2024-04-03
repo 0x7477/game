@@ -95,29 +95,25 @@ namespace wfc
             std::cout << "found " << num_of_adjacency_rules << " adjacency rules\n";
         }
 
-        void generateImage(const unsigned int &width, const unsigned int &height)
+        std::vector<float> getPatternProbabilities()
         {
-
             const std::size_t num_of_patterns = (image.width + 1 - kernel_size) * (image.height + 1 - kernel_size);
-            
-            std::vector<float> pattern_probabilities(num_of_patterns);
+            std::vector<float> pattern_probabilities{};
             for (std::size_t pattern{0u}; pattern < patterns.size(); pattern++)
                 pattern_probabilities.push_back((float)pattern_frequency[pattern] / num_of_patterns);
-            
-            std::vector<PatternInfo> infos;
 
+            return pattern_probabilities;
+        }
 
-            for (std::size_t pattern{0u}; pattern < patterns.size(); pattern++)
-            {
-                const auto probability{(float)pattern_frequency[pattern] / num_of_patterns};
-                infos.push_back(PatternInfo{NULL, 0, probability, adjacencies[pattern]});
-            }
+        void generateImage(const unsigned int &width, const unsigned int &height)
+        {
+            // const std::size_t seed{0};
 
-            const std::size_t seed{0};
-
-            Wave wave(width - kernel_size + 1, height - kernel_size + 1, kernel_size, infos, seed);
+            Wave wave(width - kernel_size + 1, height - kernel_size + 1, kernel_size,getPatternProbabilities(), adjacencies);
             const auto success = wave.run();
+            std::cout << "success: " << success << "\n";
 
+            if(!success) return;
             for(auto y{0u}; y <= height- kernel_size; y++ )
             {
                 for(auto x{0u}; x <= width- kernel_size; x++ )
@@ -140,7 +136,6 @@ namespace wfc
             }
 
 
-            std::cout << "success: " << success << "\n";
         }
 
         std::map<unsigned int, std::size_t> pattern_indexes{};

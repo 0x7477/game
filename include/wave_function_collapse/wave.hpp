@@ -2,7 +2,6 @@
 
 #include "hyperstate.hpp"
 #include <span>
-#include "pattern_info.hpp"
 #include <queue>
 #include <stack>
 #include "direction.hpp"
@@ -20,21 +19,16 @@ class Wave
 {
 
 public:
-    Wave(const std::size_t &width, const std::size_t &height, const std::size_t &kernel_size, const std::vector<PatternInfo> &pattern_info, const std::size_t &seed)
-        : width{width}, height{height}, kernel_size{kernel_size},number_of_pattern{pattern_info.size()},
-          pattern_info{pattern_info},
-          pattern_frequencies{getPatternFrequencies()},
+    Wave(const std::size_t &width, const std::size_t &height, const std::size_t &kernel_size,const std::vector<float> &pattern_frequencies, const std::vector<std::array<std::vector<std::size_t>, 4>>& adjacencies, const std::size_t &seed = std::random_device()())
+        : width{width}, height{height}, kernel_size{kernel_size},number_of_pattern{pattern_frequencies.size()},
+          adjacencies{adjacencies},
+          pattern_frequencies{pattern_frequencies},
           p_log_p_pattern_frequencies{getPLogPPatternFrequencies()},
           min_abs_half_plogp{getAbsoluteHalfOfMinimumPLogPFrequency()},
           states(width * height, createInitialHyperState()), gen(seed)
-    {}
-
-    std::vector<float> getPatternFrequencies()
     {
-        const auto frequencies = pattern_info | std::views::transform([](const PatternInfo &pattern)
-                                                                      { return pattern.probability; });
-        return {frequencies.begin(), frequencies.end()};
     }
+
     std::vector<float> getPLogPPatternFrequencies()
     {
         const auto p_log_p_frequencies = pattern_frequencies | std::views::transform([](const float &frequency)
@@ -57,7 +51,7 @@ public:
         const auto base_entropy = std::accumulate(p_log_p_pattern_frequencies.begin(), p_log_p_pattern_frequencies.end(), 0.f);
         const auto sum = std::accumulate(pattern_frequencies.begin(), pattern_frequencies.end(), 0.f);
 
-        return HyperState{pattern_info, base_entropy, sum};
+        return HyperState{adjacencies, base_entropy, sum};
     }
 
     std::tuple<std::size_t, std::size_t> getChordsFromIndex(const std::size_t &index)
@@ -216,7 +210,7 @@ public:
     {
         for (const auto &[direction, neighbour_index] : getNeighbors(index))
         {
-            for (const auto &pattern_dependency : pattern_info[pattern].possible_adjacent_patterns[direction])
+            for (const auto &pattern_dependency : adjacencies[pattern][direction])
             {
                 const auto pattern_no_longer_possible = states[neighbour_index].decrementPatternPossibility(pattern_dependency, direction);
 
@@ -234,7 +228,8 @@ public:
     }
 
     const std::size_t width, height, kernel_size, number_of_pattern;
-    const std::vector<PatternInfo> pattern_info;
+    // const std::vector<PatternInfo> pattern_info;
+    const std::vector<std::array<std::vector<std::size_t>, 4>> adjacencies;
     const std::vector<float> pattern_frequencies{};
     const std::vector<float> p_log_p_pattern_frequencies{};
     const float min_abs_half_plogp;

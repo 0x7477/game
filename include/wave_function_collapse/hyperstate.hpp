@@ -4,7 +4,6 @@
 #include <ranges>
 #include <numeric>
 #include <random>
-#include "pattern_info.hpp"
 #include <cassert>
 #include <iostream>
 #include "direction.hpp"
@@ -12,32 +11,15 @@
 class HyperState
 {
 public:
-    HyperState(const std::vector<PatternInfo> &pattern_info, const float &base_entropy, const float &sum)
+    HyperState(const std::vector<std::array<std::vector<std::size_t>, 4>>& adjacencies, const float &base_entropy, const float &sum)
         : sum{sum}, log_sum{std::log(sum)}, p_log_p_sum{base_entropy}, entropy{log_sum - base_entropy / sum},
-          possible_pattern_count(pattern_info.size()),
-          hyperstates(pattern_info.size(), true),
-          compatibilities(pattern_info.size())
+          possible_pattern_count(adjacencies.size()),
+          hyperstates(possible_pattern_count, true),
+          compatibilities(possible_pattern_count)
     {
-        for (std::size_t pattern{0u}; pattern < pattern_info.size(); pattern++)
+        for (std::size_t pattern{0u}; pattern < possible_pattern_count; pattern++)
             for (std::size_t direction{0u}; direction < 4; direction++)
-                compatibilities[pattern][direction] = pattern_info[pattern].possible_adjacent_patterns[reverse_directions[direction]].size();
-    }
-
-    float getEntropy(const std::vector<PatternInfo> &pattern_infos) const
-    {
-        const auto normalizer = 1 / sum;
-        float entropy = 0.0;
-
-        for (std::size_t i{0}; i < pattern_infos.size(); i++)
-        {
-            if (!hyperstates[i])
-                continue;
-
-            const auto probability = pattern_infos[i].probability * normalizer;
-            entropy -= probability * std::log2(probability);
-        }
-
-        return entropy;
+                compatibilities[pattern][direction] = adjacencies[pattern][reverse_directions[direction]].size();
     }
 
     std::size_t collapse(const std::vector<float> &pattern_frequencies, std::minstd_rand &gen)
