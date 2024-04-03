@@ -1,5 +1,5 @@
-#include "script.hpp"
-#include "game_object.hpp"
+#include <engine/script.hpp>
+#include <engine/game_object.hpp>
 #include <iostream>
 
 Script::Script(GameObject *game_object)

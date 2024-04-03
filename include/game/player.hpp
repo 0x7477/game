@@ -1,10 +1,10 @@
 #pragma once
 #include <string>
 #include <iostream>
-#include <synced.hpp>
-#include <script.hpp>
-#include "game_object.hpp"
-#include "transform.hpp"
+#include <engine/synced.hpp>
+#include <engine/script.hpp>
+#include <engine/game_object.hpp>
+#include <engine/transform.hpp>
 #include <chrono>
 
 class Player : public Script

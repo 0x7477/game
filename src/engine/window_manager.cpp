@@ -1,7 +1,7 @@
-#include "window_manager.hpp"
+#include <engine/window_manager.hpp>
 #include <iostream>
 #include <thread>
-#include <scenes/scene.hpp>
+#include <engine/scene.hpp>
 
 bool WindowManager::keys[sf::Keyboard::KeyCount]{};
 unsigned int WindowManager::window_width{0};

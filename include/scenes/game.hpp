@@ -1,10 +1,10 @@
 #pragma once
-#include "synced.hpp"
-#include "player.hpp"
-#include "network/network_manager.hpp"
+#include <engine/synced.hpp>
+#include <game/player.hpp>
+#include <network/network_manager.hpp>
 #include <SFML/Graphics.hpp>
 
-#include "scene.hpp"
+#include <engine/scene.hpp>
 
 namespace Scene
 {

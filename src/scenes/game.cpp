@@ -1,7 +1,7 @@
 #include <scenes/game.hpp>
 #include <iostream>
 #include <network/rpc.hpp>
-#include <player.hpp>
+#include <game/player.hpp>
 
 Scene::Game::Game(WindowManager &window_manager, network::NetworkManager &network_manager)
     : Scene{"game", window_manager},

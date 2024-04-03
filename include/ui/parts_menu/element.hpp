@@ -2,7 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <cmath>
 #include <functional>
-#include <resource_loader.hpp>
+#include <helper/resource_loader.hpp>
 namespace UI
 {
     class PartsMenuElement

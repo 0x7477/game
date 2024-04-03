@@ -1,5 +1,5 @@
-#include <scenes/scene.hpp>
-#include "window_manager.hpp"
+#include <engine/scene.hpp>
+#include <engine/window_manager.hpp>
 #include <iostream>
 
 

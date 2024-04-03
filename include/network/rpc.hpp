@@ -10,7 +10,7 @@
 #include <type_traits>
 #include <any>
 #include <vector>
-#include <game_object.hpp>
+#include <engine/game_object.hpp>
 
 namespace network
 {

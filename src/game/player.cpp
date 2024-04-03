@@ -1,8 +1,8 @@
-#include <player.hpp>
+#include <game/player.hpp>
 #include <scenes/game.hpp>
 #include <network/rpc.hpp>
 #include <cmath>
-#include "resource_loader.hpp"
+#include <helper/resource_loader.hpp>
 
 Player::Player(GameObject *game_object, const std::string &name)
     : Script{game_object}, name{name}, synced{game_object->getComponent<Synced>()}, hexagon{image_resources.get("hexagon.png")}

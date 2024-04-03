@@ -1,8 +1,8 @@
 #pragma once
 
-#include "window_manager.hpp"
-#include "resource_loader.hpp"
-#include "scene.hpp"
+#include <engine/window_manager.hpp>
+#include <helper/resource_loader.hpp>
+#include <engine/scene.hpp>
 #include <ui/button.hpp>
 #include <iostream>
 

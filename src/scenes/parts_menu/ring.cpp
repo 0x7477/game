@@ -1,5 +1,5 @@
 #include <ui/parts_menu/ring.hpp>
-#include <resource_loader.hpp>
+#include <helper/resource_loader.hpp>
 UI::PartsMenuRing::PartsMenuRing(const unsigned int &layer, const std::vector<std::variant<PartsMenuCategory, PartsMenuElement>> &children)
     : radius{layer * 80.f + 30}, thickness{50}, children{children}
 {

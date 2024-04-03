@@ -4,8 +4,8 @@
 #include <vector>
 #include <network/network_manager.hpp>
 #include <any>
-#include <game_object.hpp>
-#include <component.hpp>
+#include <engine/game_object.hpp>
+#include <engine/component.hpp>
 
 template <std::size_t N, typename Tuple, typename Func, std::size_t... Is>
 void tupleToArgsHelper(const Tuple &t, Func &&f, std::index_sequence<Is...>)

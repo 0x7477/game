@@ -4,7 +4,7 @@
 #include <span>
 #include <vector>
 #include <SFML/Graphics.hpp>
-#include "resource_loader.hpp"
+#include <helper/resource_loader.hpp>
 
 class Map
 {

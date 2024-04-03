@@ -21,7 +21,6 @@ message(${src})
 add_executable(server ${src} src/server_main.cpp)
 add_executable(client ${src} src/client_main.cpp)
 
-
 # target_link_libraries(${PROJECT_NAME}_lib png uv)
 target_link_libraries(${PROJECT_NAME} png uv sfml-system sfml-window sfml-graphics sfml-audio X11)
 target_link_libraries(server png uv sfml-system sfml-window sfml-graphics sfml-audio X11)

@@ -1,5 +1,5 @@
 #pragma once
-#include <component.hpp>
+#include <engine/component.hpp>
 #include <vector>
 #include <SFML/Graphics.hpp>
 #include <chrono>
