@@ -18,7 +18,7 @@ void Scene::Game::run()
     auto& synced = player.getComponent<Synced>();
     synced.addComponent<Player>(std::string("Peter"));
     synced.execute(print_rpc);
-    synced.execute(set_health_rpc, 5);
+    // synced.execute(set_health_rpc, 5);
 
     
     // while (window.isOpen())

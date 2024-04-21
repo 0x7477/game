@@ -9,23 +9,27 @@ template<typename T>
 class ResourceLoader
 {
     public:
-    ResourceLoader(const std::string& path)
+    ResourceLoader(const std::string& path, const std::string& file_extension)
     {
         const std::filesystem::path resources_folder ("resources/");
+
+        root_path = (resources_folder/path).string();
         for(const auto& file : std::filesystem::recursive_directory_iterator(resources_folder/path))
         {
             if(file.is_directory()) 
                 continue;
+            if(file.path().filename().extension().string() != file_extension)
+                continue;
+
             T resource;
 
-            // std::cout << file.path().filename().string() << "\n";
             resource.loadFromFile(file.path().string());
-            resources[file.path().filename().string()] = resource;
+            resources[file.path().lexically_relative(resources_folder/path).string()] = resource;
         }
     }
     
 
-    static T& get(const std::string& name)
+    T& get(const std::string& name)
     {
         if(!resources.contains(name))
         {
@@ -36,16 +40,13 @@ class ResourceLoader
         return resources[name];
     }
 
-    static inline std::map<std::string, T> resources;
+    
+    std::string root_path;
+    std::map<std::string, T> resources{};
 
     
 };
 
-template<>
-std::map<std::string, sf::Font> ResourceLoader<sf::Font>::resources{};
-template<>
-std::map<std::string, sf::Texture> ResourceLoader<sf::Texture>::resources{};
-
-
-inline ResourceLoader<sf::Font> font_resources{"fonts"};
-inline ResourceLoader<sf::Texture> image_resources{"images"};
+inline ResourceLoader<sf::Font> font_resources{"fonts", ".ttf"};
+inline ResourceLoader<sf::Texture> image_resources{"images", ".png"};
+inline ResourceLoader<sf::Texture> gif_resources{"images", ".gif"};

@@ -10,6 +10,11 @@ Scene::Menu::Menu(WindowManager &window_manager)
     exit_button.setColor(sf::Color::Red);
 }
 
+void createGame()
+{
+    
+}
+
 void Scene::Menu::run()
 {
     auto &window = window_manager.window;

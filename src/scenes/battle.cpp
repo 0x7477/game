@@ -1,7 +1,7 @@
 #include <scenes/battle.hpp>
 
 Scene::Battle::Battle(WindowManager &window_manager, const std::string& map_data)
-    : Scene{"map", window_manager}, map{map_data}
+    : Scene{"map", window_manager}, map{map_data, Red}
 {
 }
 

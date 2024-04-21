@@ -2,6 +2,8 @@
 #include <cmath>
 #include "tile_image.hpp"
 
+namespace wfc
+{
 class Pattern
 {
     public:
@@ -79,3 +81,4 @@ private:
     std::vector<TileId> tiles;
     std::size_t hash; 
 };
+}

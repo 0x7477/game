@@ -1,17 +1,14 @@
 #pragma once
 #include <string>
 #include <SFML/Graphics.hpp>
+#include <helper/resource_loader.hpp>
 #include "layout.hpp"
 namespace UI
 {
     class Button
     {
     public:
-        Button(const std::string &text, const Layout &layout, std::function<void()> on_click)
-            : text{text}, layout{layout}, on_click{on_click} 
-            {
-                background.setFillColor(background_color);
-            }
+        Button(const std::string &text_, const Layout &layout, std::function<void()> on_click);
 
         enum State
         {
@@ -39,7 +36,8 @@ namespace UI
         bool hover;
         sf::Color background_color{sf::Color::Transparent};
         sf::RectangleShape background;
-        std::string text;
+        sf::Text text;
+
         Layout layout;
         std::function<void()> on_click;
     };

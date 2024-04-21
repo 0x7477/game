@@ -1,6 +1,9 @@
 #pragma once
 #include <cstdint>
 
+namespace wfc
+{
+
 typedef uint8_t TileId; 
 
 struct Tile
@@ -20,3 +23,4 @@ struct Tile
 
     TileId id;
 };
+}

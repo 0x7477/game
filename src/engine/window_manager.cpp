@@ -4,6 +4,7 @@
 #include <engine/scene.hpp>
 
 bool WindowManager::keys[sf::Keyboard::KeyCount]{};
+bool WindowManager::last_frame_keys[sf::Keyboard::KeyCount]{};
 unsigned int WindowManager::window_width{0};
 unsigned int WindowManager::window_height{0};
 int WindowManager::mouse_delta{0};
@@ -49,6 +50,26 @@ void WindowManager::update()
 
     if (scene)
         scene->run();
+        
+    for(auto i{0u}; i< sf::Keyboard::KeyCount; i++ )
+        last_frame_keys[i] = keys[i];
+}
+
+bool WindowManager::getKeyDown(const sf::Keyboard::Key& key)
+{
+    if(!keys[key])
+        return false;
+
+    const bool first_press_this_frame = keys[key] && !last_frame_keys[key];
+
+    if(first_press_this_frame)
+        last_frame_keys[key] = true; // dont return getKeyDown true twice in a frame
+
+    return first_press_this_frame;
+}
+bool WindowManager::getKey(const sf::Keyboard::Key& key)
+{
+    return keys[key];
 }
 
 void WindowManager::close()

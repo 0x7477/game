@@ -8,6 +8,8 @@
 #include <ranges>
 #include <concepts>
 #include <expected>
+namespace wfc
+{
 
 enum class ObservationResult
 {
@@ -239,3 +241,4 @@ public:
     std::stack<std::tuple<std::size_t, std::size_t>> propagation_stack{};
     std::minstd_rand gen;
 };
+}

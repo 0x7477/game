@@ -9,6 +9,9 @@
 
 #include "tile.hpp"
 
+namespace wfc
+{
+
 class TileImage
 {
 public:
@@ -105,3 +108,4 @@ public:
     unsigned int width, height;
     std::vector<TileId> pixel;
 };
+}

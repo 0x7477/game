@@ -18,7 +18,7 @@ class Script: public Component
     public:
     Script(GameObject* game_object);
 
-    virtual void update(const double& delta_time);
+    virtual void update(const float& delta_time);
     virtual void display(sf::RenderWindow& window);
 
 };

@@ -8,7 +8,7 @@ Script::Script(GameObject *game_object)
     Scripts::scripts.push_back(this);
 }
 
-void Script::update(const double& delta_time){}
+void Script::update(const float& delta_time){}
 void Script::display(sf::RenderWindow& window){}
 
 double getDeltaTime()

@@ -1,24 +1,39 @@
 #include <ui/button.hpp>
 
+UI::Button::Button(const std::string &text_, const Layout &layout, std::function<void()> on_click)
+    : text{text_, font_resources.get("arial.ttf")}, layout{layout}, on_click{on_click}
+{
+    background.setFillColor(background_color);
+    sf::FloatRect rect = text.getLocalBounds();
+    text.setOrigin(rect.left + rect.width / 2.0f, rect.top + rect.height / 2.0f);
+}
+
 template <>
 void UI::Button::display<UI::Button::State::Normal>(sf::RenderWindow &window)
 {
-    const auto& rect = layout.getRect();
+    const auto &rect = layout.getRect();
     background.setSize({rect.width, rect.height});
     background.setPosition(rect.x, rect.y);
     background.setOutlineThickness(0);
     window.draw(background);
+
+    text.setPosition(rect.x + rect.width / 2, rect.y + rect.height / 2);
+    window.draw(text);
 }
 
 template <>
 void UI::Button::display<UI::Button::State::Hover>(sf::RenderWindow &window)
 {
-    const auto& rect = layout.getRect();
+    const auto &rect = layout.getRect();
     background.setSize({rect.width, rect.height});
     background.setOutlineColor(sf::Color::Black);
     background.setOutlineThickness(10);
     background.setPosition(rect.x, rect.y);
+
     window.draw(background);
+
+    text.setPosition(rect.x + rect.width / 2, rect.y + rect.height / 2);
+    window.draw(text);
 }
 
 template <>
