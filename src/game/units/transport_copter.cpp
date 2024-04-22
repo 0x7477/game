@@ -36,22 +36,22 @@ namespace Units
             std::vector<Action> actions{};
 
             actions.push_back({.name = "Unload", .execute = [&map, this, me, target]()
-                                                 {
-                                                     map.moveUnit(me, target);
+        {
+            map.moveUnit(me, target);
 
-                                                     const auto possible_unload_tiles = UnloadSelector::getTiles(map, target, *loaded_unit);
-                                                     map.setMovementTileMode(possible_unload_tiles, Tile::DisplayMode::Move);
-                                                     map.mode = SelectTarget;
-                                                     map.selectable_targets = possible_unload_tiles;
+            const auto possible_unload_tiles = UnloadSelector::getTiles(map, target, *loaded_unit);
+            map.setMovementTileMode(possible_unload_tiles, Tile::DisplayMode::Move);
+            map.mode = SelectTarget;
+            map.selectable_targets = possible_unload_tiles;
 
-                                                     map.select_function = [this, &map, me](const TileIndex &unload_tile)
-                                                     {
-                                                         map.getTile(unload_tile).unit = loaded_unit;
-                                                         map.clearTileEffects();
-                                                         loaded_unit = nullptr;
-                                                         endTurn(map);
-                                                     };
-                                                 }});
+            map.select_function = [this, &map, me](const TileIndex &unload_tile)
+            {
+                map.getTile(unload_tile).unit = loaded_unit;
+                map.clearTileEffects();
+                loaded_unit = nullptr;
+                endTurn(map);
+            };
+        }});
 
             return actions;
         }

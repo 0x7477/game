@@ -3,22 +3,23 @@
 #include <game/map.hpp>
 #include <game/attack_simulator.hpp>
 
-void MovementSelector::fill(Map &map, const TileIndex &index, const int &remaining_movement_speed, const Unit &unit, std::vector<TileIndex> &tile_indices, std::map<TileIndex, int> &discovered_movement_costs)
+void MovementSelector::fill(Map &map, const TileIndex &index, const int &remaining_movement_speed, const Unit &unit, std::vector<TileIndex> &tile_indices, std::map<TileIndex, std::tuple<int, TileIndex>> &discovered_movement_costs, const TileIndex &last_index)
 {
     if (remaining_movement_speed < 0)
         return;
 
-    if (discovered_movement_costs.contains(index) && remaining_movement_speed <= discovered_movement_costs[index])
+    if (discovered_movement_costs.contains(index) && remaining_movement_speed <= std::get<int>(discovered_movement_costs[index]))
         return;
 
-    discovered_movement_costs[index] = remaining_movement_speed;
+    std::get<int>(discovered_movement_costs[index]) = remaining_movement_speed;
+    std::get<TileIndex>(discovered_movement_costs[index]) = last_index;
 
     auto &tile = map[index];
 
     bool is_movement_possible = true;
     if (tile.unit)
     {
-        if(tile.unit->getTeam() != unit.getTeam())
+        if (tile.unit->getTeam() != unit.getTeam())
             return;
         is_movement_possible = tile.unit->allowUnitInteraction(unit);
     }
@@ -32,16 +33,47 @@ void MovementSelector::fill(Map &map, const TileIndex &index, const int &remaini
 
         if (movement_cost == 0)
             continue;
-        fill(map, neighbour, remaining_movement_speed - movement_cost, unit, tile_indices, discovered_movement_costs);
+        fill(map, neighbour, remaining_movement_speed - movement_cost, unit, tile_indices, discovered_movement_costs, index);
     }
 }
 
 std::vector<TileIndex> MovementSelector::getTiles(Map &map, const TileIndex &tile_index, const Unit &unit)
 {
     std::vector<TileIndex> tiles{tile_index};
-    std::map<TileIndex, int> discovered_movement_costs{};
-    fill(map, tile_index, unit.getMovementSpeed(), unit, tiles, discovered_movement_costs);
+    std::map<TileIndex, std::tuple<int, TileIndex>> discovered_movement_costs{};
+    fill(map, tile_index, unit.getMovementSpeed(), unit, tiles, discovered_movement_costs,tile_index);
     return tiles;
+}
+
+std::optional<std::vector<TileIndex>> MovementSelector::getPath(Map &map, const TileIndex &start, const TileIndex &end, const Unit &unit)
+{
+    std::vector<TileIndex> path{start};
+    std::map<TileIndex, std::tuple<int, TileIndex>> discovered_movement_costs{};
+    fill(map, start, unit.getMovementSpeed(), unit, path, discovered_movement_costs, start);
+
+    if (!discovered_movement_costs.contains(end))
+        return {};
+
+    path.clear();
+
+
+    TileIndex current_tile = end;
+
+    // int i = 10;
+    while (current_tile != start)
+    {
+        // std::cout << current_tile << "\n";
+        // if(i-- == 0)
+        //     break;
+        path.push_back(current_tile);
+        current_tile = std::get<TileIndex>(discovered_movement_costs[current_tile]);
+
+    }
+    path.push_back(start);
+    
+    std::reverse(path.begin(), path.end());
+    // std::getchar();
+    return path;
 }
 
 std::vector<TileIndex> AttackSelector::getTiles(Map &map, const TileIndex &tile_index, const Unit &unit, const unsigned &minimum_range, const unsigned &maximum_range)
@@ -63,7 +95,7 @@ std::vector<TileIndex> AttackSelector::getTiles(Map &map, const TileIndex &tile_
             if (map[x, y].unit->getTeam() == unit.getTeam())
                 continue;
 
-            if(!AttackSimulator::canAttack(unit,*map[x, y].unit))
+            if (!AttackSimulator::canAttack(unit, *map[x, y].unit))
                 continue;
 
             tiles.push_back({x, y});
@@ -73,20 +105,18 @@ std::vector<TileIndex> AttackSelector::getTiles(Map &map, const TileIndex &tile_
     return tiles;
 }
 
-
-
 std::vector<TileIndex> UnloadSelector::getTiles(Map &map, const TileIndex &tile_index, const Unit &unit)
 {
     std::vector<TileIndex> tiles{};
 
     for (const auto &neighbour : map.getNeighbors(tile_index))
     {
-        if(map.getTile(neighbour).getMovementCost(unit.getMovementType()) == 0)
+        if (map.getTile(neighbour).getMovementCost(unit.getMovementType()) == 0)
             continue;
 
-        if(map.getTile(neighbour).unit)
+        if (map.getTile(neighbour).unit)
             continue;
-        
+
         tiles.push_back(neighbour);
     }
 

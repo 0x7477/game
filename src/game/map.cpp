@@ -12,6 +12,10 @@ void Map::displayMode<ViewMode::View>(sf::RenderWindow &window)
     drawMap(window);
     moveCursor();
     handleEvents();
+
+    if (selected_unit)
+        getTile(*selected_unit).unit->displayPath(window, *this);
+    
     drawCursor(window);
 }
 template <>
@@ -190,6 +194,10 @@ void Map::handleEvents()
             assert(getTile(*selected_unit).unit);
             getTile(*selected_unit).unit->act(*this, *selected_unit, cursor);
         }
+    }
+    if (selected_unit)
+    {
+        getTile(*selected_unit).unit->updateCursor(*this, cursor);
     }
 
     if (WindowManager::getKeyDown(sf::Keyboard::X))

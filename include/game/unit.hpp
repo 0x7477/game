@@ -8,7 +8,7 @@
 #include <game/movement.hpp>
 #include <source_location>
 #include <game/tile_index.hpp>
-#include <game/movement_animation.hpp>
+#include <game/movement_manager.hpp>
 #include <optional>
 #include <game/teams.hpp>
 #include <ui/gif.hpp>
@@ -45,6 +45,7 @@ public:
     
     Unit(const Team& team, const Stats &stats, const std::source_location &location = std::source_location::current());
 
+    void displayPath(sf::RenderWindow &window, Map &map);
     void display(sf::RenderWindow &window, const Map &map, const TileIndex &index);
 
     virtual void startRound(const Map &map, const TileIndex &index) {};
@@ -101,6 +102,7 @@ public:
 
     unsigned getUnitCount() const;
 
+    void updateCursor(Map& map, const TileIndex& cursor);
     std::string id;
     UI::GIF sprite;
     constexpr static int max_health{100};
@@ -110,13 +112,12 @@ public:
 
     void endTurn(Map& map);
 protected:
-
     
     Stats stats;
     Status status;
     Team team{Team::Red};
 
-    std::optional<MovementAnimation> movement_animation;
+    MovementManager movement_manager;
     sf::Text health_text;
 };
 

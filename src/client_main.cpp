@@ -23,8 +23,8 @@ int main(int argc, char **argv)
     Scene::Menu menu{window_manager};
     Scene::Battle map{window_manager,map_data};
 
-    window_manager.scene = &menu;
-    // window_manager.scene = &map;
+    // window_manager.scene = &menu;
+    window_manager.scene = &map;
 
     window_manager.start();
     // network::Client client{"127.0.0.1", 2000};

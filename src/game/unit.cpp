@@ -13,20 +13,25 @@
 Unit::Unit(const Team &team, const Stats &stats, const std::source_location &location)
     : id{getClassName(location)},
       sprite{"units/" + id + "/" + std::to_string(team) + "/idle/", "resources/images/"},
-      stats{stats}, team{team}, health_text{"", font_resources.get("arial.ttf")}
+      stats{stats}, team{team}, movement_manager{*this}, health_text{"", font_resources.get("arial.ttf")}
 {
+}
+
+void Unit::displayPath(sf::RenderWindow &window, Map &map)
+{
+    movement_manager.displayPath(window, map);
+}
+
+void Unit::updateCursor(Map& map, const TileIndex& cursor)
+{
+    movement_manager.updatePath(map, cursor);
 }
 
 void Unit::display(sf::RenderWindow &window, const Map &map, const TileIndex &index)
 {
     const auto offset = map.scale * 3.0;
 
-    float x, y;
-
-    if (!movement_animation)
-        std::tie(x, y) = map.getScreenPosition(index);
-    else
-        std::tie(x, y) = movement_animation->getCurrentPosition(map);
+    const auto [x,y] = movement_manager.getCurrentPosition(map, index);
 
     sprite.setColor(status.finished ? sf::Color(100, 100, 100) : sf::Color::White);
     sprite.display(window, x, y - offset, map.scale);
@@ -56,13 +61,14 @@ bool Unit::select(Map &map, const TileIndex &index)
     if (!status.canAct())
         return false;
     map.selected_unit = index;
+    movement_manager.init(index);
     displayMovementTiles(map, index);
     return true;
 }
 
 void Unit::attack(Map &map, const TileIndex &me, const TileIndex &target)
 {
-    const auto new_position = movement_animation->getEndPosition();
+    const auto new_position = movement_manager.getEndPosition();
     map.moveUnit(me, new_position);
 
     const auto result = AttackSimulator::attack(map, new_position, target);
@@ -154,7 +160,7 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
         };
         auto cancel_action = [&, me]()
         {
-            movement_animation = {};
+            movement_manager.stop();
             displayMovementTiles(map, me);
             map.mode = View;
         };
@@ -162,7 +168,7 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
         map.action_menu.setOptions(options, execute_action, cancel_action);
     };
 
-    movement_animation = MovementAnimation(me, target, on_movement_finished);
+    movement_manager.startAnimation(on_movement_finished);
     map.mode = SelectAction;
     map.action_menu.clearOptions();
 }
@@ -176,7 +182,7 @@ unsigned Unit::getUnitCount() const
 
 void Unit::endTurn(Map &map)
 {
-    movement_animation = {};
+    movement_manager.stop();
     map.selected_unit = {};
     map.mode = View;
     setFinished();
