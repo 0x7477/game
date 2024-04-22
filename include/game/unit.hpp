@@ -117,7 +117,9 @@ protected:
     Status status;
     Team team{Team::Red};
 
+public:
     MovementManager movement_manager;
+protected:
     sf::Text health_text;
 };
 

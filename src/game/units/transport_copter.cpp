@@ -44,8 +44,25 @@ namespace Units
             map.mode = SelectTarget;
             map.selectable_targets = possible_unload_tiles;
 
-            map.select_function = [this, &map, me](const TileIndex &unload_tile)
+            map.select_function = [this, &map, me, target](const TileIndex &unload_tile)
             {
+                
+                //                                                     void MovementManager::init(const TileIndex &start)
+// {
+//     path = {start};
+//     current_movement_costs = 0;
+// }
+// void MovementManager::startAnimation(const std::function<void()> &on_animation_finished_)
+// {
+//     is_moving = true;
+//     on_animation_finished = on_animation_finished_;
+//     delta_time.update();
+//     time_passed = 0;
+// }
+                loaded_unit->movement_manager.init(target);
+                loaded_unit->movement_manager.updatePath(map,unload_tile);
+                
+                loaded_unit->movement_manager.startAnimation([](){});
                 map.getTile(unload_tile).unit = loaded_unit;
                 map.clearTileEffects();
                 loaded_unit = nullptr;
