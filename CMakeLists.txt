@@ -28,3 +28,4 @@ include_directories(include)
 
 # Copy resources directory to build directory
 file(COPY resources DESTINATION ${CMAKE_BINARY_DIR})
+

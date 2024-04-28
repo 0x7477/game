@@ -7,6 +7,7 @@
 Player::Player(GameObject *game_object, const std::string &name)
     : Script{game_object}, synced{game_object->getComponent<Synced>()}
 {
+    std::cout << "hi\n";
 }
 
 void Player::control(const double &delta_time)

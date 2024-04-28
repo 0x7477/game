@@ -22,7 +22,7 @@ void Unit::displayPath(sf::RenderWindow &window, Map &map)
     movement_manager.displayPath(window, map);
 }
 
-void Unit::updateCursor(Map& map, const TileIndex& cursor)
+void Unit::updateCursor(Map &map, const TileIndex &cursor)
 {
     movement_manager.updatePath(map, cursor);
 }
@@ -31,7 +31,7 @@ void Unit::display(sf::RenderWindow &window, const Map &map, const TileIndex &in
 {
     const auto offset = map.scale * 3.0;
 
-    const auto [x,y] = movement_manager.getCurrentPosition(map, index);
+    const auto [x, y] = movement_manager.getCurrentPosition(map, index);
 
     sprite.setColor(status.finished ? sf::Color(100, 100, 100) : sf::Color::White);
     sprite.display(window, x, y - offset, map.scale);
@@ -103,10 +103,10 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
         const auto target_tile = map.getTile(target);
         const auto has_target_unit = target_tile.unit;
 
-        if (!has_target_unit)
+
+        if (!has_target_unit || target == me)
         {
             const auto possible_attack_tiles = AttackSelector::getTiles(map, target, *this, 1, 1);
-
             if (possible_attack_tiles.size() > 0)
             {
                 options.push_back("Attack");
@@ -116,7 +116,7 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
                     map.mode = SelectTarget;
                     map.selectable_targets = possible_attack_tiles;
 
-                    map.select_function = [this, &map, me](const TileIndex& unit_to_attack)
+                    map.select_function = [this, &map, me](const TileIndex &unit_to_attack)
                     {
                         attack(map, me, unit_to_attack);
                     };

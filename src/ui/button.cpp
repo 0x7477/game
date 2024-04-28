@@ -42,13 +42,21 @@ void UI::Button::display<UI::Button::State::Pressed>(sf::RenderWindow &window)
     display<Hover>(window);
 }
 
+void UI::Button::setString(const std::string& text_)
+{
+    text.setString(text_);
+    sf::FloatRect rect = text.getLocalBounds();
+    text.setOrigin(rect.left + rect.width / 2.0f, rect.top + rect.height / 2.0f);
+}
+
 void UI::Button::draw(sf::RenderWindow &window)
 {
     const auto mouse_pos = sf::Mouse::getPosition(window);
 
     const auto hover = layout.getRect().contains(mouse_pos.x, mouse_pos.y);
-    const auto clicked = sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
-
+    const auto currently_clicked = sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
+    const auto clicked = currently_clicked && !was_clicked_last_frame;
+    was_clicked_last_frame = currently_clicked;
     if (!hover)
         display<Normal>(window);
     else if (!clicked)

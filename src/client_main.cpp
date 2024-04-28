@@ -8,27 +8,29 @@
 #include <engine/window_manager.hpp>
 #include <scenes/menu.hpp>
 #include <scenes/editor.hpp>
+#include <scenes/lobby.hpp>
 #include <X11/Xlib.h>
 #include <iterator>
 #include <fstream>
 
 int main(int argc, char **argv)
 {
+    network::Client client{"127.0.0.1", 2000};
+    network::NetworkManager manager{client};
+
     std::ifstream ifs("maps/raw/just_plains.txt");
     const std::string map_data(std::istreambuf_iterator<char>{ifs}, {});
 
-    
     XInitThreads();
     WindowManager window_manager{};
-    Scene::Menu menu{window_manager};
+    Scene::Lobby lobby{window_manager, manager};
     Scene::Battle map{window_manager,map_data};
+    Scene::Menu menu{window_manager, manager, lobby};
 
-    // window_manager.scene = &menu;
-    window_manager.scene = &map;
+    window_manager.scene = &menu;
+    // window_manager.scene = &map;
 
     window_manager.start();
-    // network::Client client{"127.0.0.1", 2000};
-    // network::NetworkManager manager{client};
     // Game game{manager};
     // game.run();
 

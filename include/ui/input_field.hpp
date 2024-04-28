@@ -5,24 +5,13 @@
 #include "layout.hpp"
 namespace UI
 {
-    class Button
+    class InputField
     {
     public:
-        Button(const std::string &text_, const Layout &layout, std::function<void()> on_click);
-
-        enum State
-        {
-            Normal,
-            Hover,
-            Pressed
-        };
-
-        template <State state = Normal>
-        void display(sf::RenderWindow &window);
+        InputField(const Layout &layout);
 
         void draw(sf::RenderWindow &window);
-        void setString(const std::string& text_);
-        
+
         Layout &getLayout()
         {
             return layout;
@@ -34,14 +23,14 @@ namespace UI
             background.setFillColor(background_color);
         }
 
-        bool hover;
-        bool was_clicked_last_frame;
-        sf::Color background_color{sf::Color::Transparent};
+        std::string getValue() const;
+
+        sf::Color background_color{sf::Color::Blue};
         sf::RectangleShape background;
         sf::Text text;
+        std::string value{};
 
         Layout layout;
-        std::function<void()> on_click;
     };
 }
 

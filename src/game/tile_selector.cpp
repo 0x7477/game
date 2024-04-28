@@ -41,7 +41,7 @@ std::vector<TileIndex> MovementSelector::getTiles(Map &map, const TileIndex &til
 {
     std::vector<TileIndex> tiles{tile_index};
     std::map<TileIndex, std::tuple<int, TileIndex>> discovered_movement_costs{};
-    fill(map, tile_index, unit.getMovementSpeed(), unit, tiles, discovered_movement_costs,tile_index);
+    fill(map, tile_index, unit.getMovementSpeed(), unit, tiles, discovered_movement_costs, tile_index);
     return tiles;
 }
 
@@ -56,7 +56,6 @@ std::optional<std::vector<TileIndex>> MovementSelector::getPath(Map &map, const 
 
     path.clear();
 
-
     TileIndex current_tile = end;
 
     // int i = 10;
@@ -67,10 +66,9 @@ std::optional<std::vector<TileIndex>> MovementSelector::getPath(Map &map, const 
         //     break;
         path.push_back(current_tile);
         current_tile = std::get<TileIndex>(discovered_movement_costs[current_tile]);
-
     }
     path.push_back(start);
-    
+
     std::reverse(path.begin(), path.end());
     // std::getchar();
     return path;
@@ -80,23 +78,36 @@ std::vector<TileIndex> AttackSelector::getTiles(Map &map, const TileIndex &tile_
 {
     std::vector<TileIndex> tiles{};
 
+    // std::cout << tile_index << "\n";
+    // std::cout << minimum_range << "\n";
+    // std::cout << maximum_range << "\n";
+
     const auto [tile_x, tile_y] = tile_index;
     for (unsigned y = std::min(0u, tile_y - maximum_range); y < std::max(map.height, tile_y + maximum_range); y++)
     {
         for (unsigned x = std::min(0u, tile_x - maximum_range); x < std::max(map.width, tile_x + maximum_range); x++)
         {
+            // std::cout << x << ", " << y  << "\n";
+
             const unsigned abs_distance = abs((int)x - (int)tile_x) + abs((int)y - (int)tile_y);
             if (abs_distance < minimum_range || abs_distance > maximum_range)
                 continue;
 
+            // std::cout << __LINE__ << "\n";
+
             if (!map[x, y].unit)
                 continue;
+
+            // std::cout << __LINE__ << "\n";
 
             if (map[x, y].unit->getTeam() == unit.getTeam())
                 continue;
 
+            // std::cout << __LINE__ << "\n";
+
             if (!AttackSimulator::canAttack(unit, *map[x, y].unit))
                 continue;
+            // std::cout << __LINE__ << "\n";
 
             tiles.push_back({x, y});
         }
