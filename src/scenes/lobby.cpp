@@ -226,8 +226,8 @@ void Scene::Lobby::onJoined(const std::optional<std::string> &error_)
     }
     else
     {
-        for (const auto &player : lobby.players)
-            std::cout << "player " << player << " in lobby\n";
+        for (const auto &[id, _] : lobby.players)
+            std::cout << "player " << id << " in lobby\n";
         joined = true;
     }
 }
