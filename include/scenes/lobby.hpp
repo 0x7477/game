@@ -8,6 +8,7 @@
 #include <iostream>
 #include <network/network_manager.hpp>
 #include <game/lobby.hpp>
+#include <scenes/battle.hpp>
 
 namespace Scene
 {
@@ -20,37 +21,40 @@ namespace Scene
             Create, Join
         };
 
-        Lobby(WindowManager &window_manager, network::NetworkManager &network_manager);
+        Lobby(WindowManager &window_manager, network::NetworkManager &network_manager, Battle& battle);
 
         virtual void run() override;
 
         void setLobbyId(const network::Datagram<std::string>& id);
         std::string getRandomPlayerName();
 
-        void notifyPlayerJoined(const unsigned& id);
+        void notifyPlayerJoined(const LobbyMember &member);
         void drawLobby();
         void displayJoinError(const std::string& error);
         void promptCode();
         void joinGame();
-        void setReady();
+        void sendReady();
+        void setReady(const unsigned& id);
         void setMode(const Mode& mode);
         void setId(const std::string& id_);
         void onJoined(const std::optional<std::string>& error);
     private:
 
+        std::string username{};
         Mode mode;
         std::string id{};
         network::NetworkManager &network_manager;
-
+        Battle& battle;
         bool joined{false};
         bool connecting{false};
+        bool ready{false};
 
         std::optional<std::string> error{};
         sf::Text title_text;
         sf::Text room_number;
         UI::Button error_button{"Error", {20_percent, 20_percent, 40_percent, 20_percent},[&](){error={};}};
         UI::InputField lobby_id_input{{20_percent, 20_percent, 60_percent, 20_percent}};
-        UI::Button create_button{"Ready", {60_percent, 20_percent, 30_percent, 60_percent}, [&](){setReady()}};
+        UI::Button ready_button{"Ready", {60_percent, 20_percent, 30_percent, 60_percent}, [&](){ready = true; sendReady();}};
         UI::Button join_button{"Join", {60_percent, 20_percent, 30_percent, 60_percent}, [&](){joinGame();}};
         UI::Button exit_button{"Exit", {60_percent, 60_percent, 30_percent, 20_percent},[&](){setScene("menu");}};
     };
