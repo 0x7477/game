@@ -2,29 +2,7 @@
 #include <game/map.hpp>
 #include <game/game.hpp>
 
-const std::vector<std::string> factory_produced_units{"Infantry", "TransportCopter"};
-struct ProduceUnit : public TilePlayerInteraction
-{
-    virtual bool interact(Map &map, const TileIndex &tile_index) const override
-    {
-        const auto& tile = map[tile_index];
-        if (map.team != tile.team)
-            return false;
-
-        map.shopping_menu.setOptions(factory_produced_units, [&](const std::size_t &index)
-                                     {
-            map.game.sendCreateUnit(factory_produced_units[index], map.team, tile_index);
-            const auto unit = map.createUnit(factory_produced_units[index], map.team, tile_index);
-            unit->setFinished();
-            map.mode = ViewMode::View; }, [&]()
-                                     { map.mode = ViewMode::View; });
-        map.mode = ViewMode::Shopping;
-
-        return true;
-    }
-};
-
-static ProduceUnit produce_unit{};
+static ProduceUnit produce_unit{{"Infantry", "TransportCopter"}};
 
 namespace Tiles
 {
@@ -34,29 +12,6 @@ namespace Tiles
         {
         }
     };
-
-    // template <>
-    // struct Base<Neutral> : public Tile
-    // {
-    //     Base() : Tile(35, ) {}
-    // };
-    // template <>
-    // struct Base<Red> : public Tile
-    // {
-    //     Base() : Tile(39, 3, {1, 1, 1, 1, 0, 1, 1, 0},produce_unit)
-    //     {
-    //         team = Red;
-    //     }
-    // };
-
-    // template <>
-    // struct Base<Blue> : public Tile
-    // {
-    //     Base() : Tile(44, 3, {1, 1, 1, 1, 0, 1, 1, 0},produce_unit)
-    //     {
-    //         team = Blue;
-    //     }
-    // };
 }
 
 namespace

@@ -85,6 +85,7 @@ void Unit::move(Map &map, const TileIndex &from, const TileIndex &to)
         target_tile.unit = map[from].unit;
         map[from].unit = nullptr;
     }
+    onMoved();
 }
 
 void Unit::executeAction(const ActionId& action, Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)

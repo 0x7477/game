@@ -61,7 +61,12 @@ public:
     void displayPath(sf::RenderWindow &window, Map &map);
     void display(sf::RenderWindow &window, const Map &map, const TileIndex &index);
 
-    virtual void startRound(const Map &map, const TileIndex &index) {};
+
+    virtual void onMoved(){};
+
+    virtual void startRound(const Map &map, const TileIndex &index) {
+        setFinished(false);
+    };
 
     template <typename T>
     static void registerClass()
@@ -84,6 +89,8 @@ public:
 
         return function_name.substr(start, end - start);
     }
+
+    
 
     //actions
     void executeAction(const ActionId& action, Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target);

@@ -17,7 +17,8 @@ int main(int argc, char **argv)
     network::Client client{"127.0.0.1", 2000};
     network::NetworkManager manager{client};
 
-    std::ifstream ifs("maps/raw/just_plains.txt");
+    std::ifstream ifs("maps/raw/all_tiles.txt");
+    // std::ifstream ifs("maps/raw/just_plains.txt");
     const std::string map_data(std::istreambuf_iterator<char>{ifs}, {});
 
     XInitThreads();

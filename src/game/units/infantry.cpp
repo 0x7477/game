@@ -12,6 +12,12 @@ namespace Units
             actions[Capture] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target){this->executeCaptureAction(map, me, new_position, target);};
         }
 
+        virtual void onMoved() override
+        {
+            capture_progress = 0;
+        }
+
+
         void executeCaptureAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)
         {
             if(capturing_tile_index && *capturing_tile_index != target)

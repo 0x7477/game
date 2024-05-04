@@ -28,6 +28,17 @@ struct NoTilePlayerInteraction : public TilePlayerInteraction
 {
 };
 
+struct ProduceUnit : public TilePlayerInteraction
+{
+    ProduceUnit(const std::vector<std::string>& factory_produced_units)
+    :factory_produced_units{factory_produced_units}{}
+
+    virtual bool interact(Map &map, const TileIndex &tile_index) const override;
+
+    std::vector<std::string> factory_produced_units;
+};
+
+
 static NoTilePlayerInteraction default_tile_interaction;
 
 class TileRoundBehaviour
@@ -44,6 +55,11 @@ public:
         Normal,
         Move,
         Attack
+    };
+
+    enum Direction
+    {
+        URDL, V, H, U,UR, R, RD, D, DL, L, LU, URD, RDL, DLU, LUR
     };
 
     struct TileInfo
@@ -71,7 +87,6 @@ public:
         movement_effect{"misc/movement_tile/", "resources/images/"},
         attack_effect{"misc/attack_tile/", "resources/images/"}
     {
-        
     }
 
 
@@ -105,6 +120,20 @@ public:
         return t; };
     }
 
+    template <typename T>
+    static void registerClass(const unsigned &id, const Direction &direction)
+    {
+        library[id] = [direction]() -> T
+        { T t{};
+            t.setDirection(direction);
+        return t; };
+    }
+
+    void setDirection(const Direction& direction)
+    {
+        sprite = UI::GIF("tiles/" + id + "/"  + std::to_string(direction) + "/", "resources/images/");
+    }
+
     unsigned getDefense() const
     {
         return info.defense;
@@ -127,6 +156,8 @@ public:
     }
     static Tile createTile(unsigned id)
     {
+        if(!library.contains(id))
+            std::cout << "missing id " << id << "\n";
         assert(library.contains(id));
         return library[id]();
     }
@@ -164,5 +195,12 @@ template <typename T>
 static bool init_tile(const unsigned &id, const Team &team)
 {
     Tile::registerClass<T>(id, team);
+    return true;
+}
+
+template <typename T>
+static bool init_tile(const unsigned &id, const Tile::Direction& direction)
+{
+    Tile::registerClass<T>(id, direction);
     return true;
 }

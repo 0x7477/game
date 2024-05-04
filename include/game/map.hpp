@@ -70,7 +70,7 @@ public:
         for (unsigned y{0}; y < height; y++)
             for (unsigned x{0}; x < width; x++)
                 if (tiles[y][x].unit)
-                    tiles[y][x].unit->setFinished(false);
+                    tiles[y][x].unit->startRound(*this, {x,y});
     }
 
     void handleMenu();

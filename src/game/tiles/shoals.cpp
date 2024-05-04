@@ -1,21 +1,19 @@
+#include <game/tile.hpp>
 
-
-// #include <game/tile.hpp>
-
-// namespace Tiles
-// {
-//     class Shoals : Tile
-//     {
-//         Shoals()
-//             : movement_costs{1,1, 1, 1, 0, 1, 1, 0},
-//               defense{0}
-//         {
-//         }
-//     };
-// }
-
-// bool init = []()
-// {
-//     Tile::registerClass<Shoals>();
-//     return true;
-// }
+namespace Tiles
+{
+    struct Shoals : Tile
+    {
+        Shoals()
+            : Tile({0, {0, 0, 0,0, 1, 1, 1, 0}})
+        {
+        }
+    };
+}
+namespace
+{
+    bool init = init_tile<Tiles::Shoals>(29, Tile::Direction::U) &&
+    init_tile<Tiles::Shoals>(30, Tile::Direction::D) &&
+    init_tile<Tiles::Shoals>(31, Tile::Direction::R) &&
+    init_tile<Tiles::Shoals>(32, Tile::Direction::L);
+}

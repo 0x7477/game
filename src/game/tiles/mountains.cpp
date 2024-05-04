@@ -1,17 +1,16 @@
-// #include <game/tile.hpp>
+#include <game/tile.hpp>
 
-// namespace Tiles
-// {
-//     struct Mountains : Tile
-//     {
-//         Mountains()
-//             : Tile({4, {2, 1, 0, 0, 0, 0, 1, 0}})
-//         {
-//         }
-//     };
-// }
-
-// namespace
-// {
-//     bool init = init_tile<Tiles::Mountains>(2);
-// }
+namespace Tiles
+{
+    struct Mountains : Tile
+    {
+        Mountains()
+            : Tile({4, {2, 1, 0, 0, 0, 0, 1, 0}})
+        {
+        }
+    };
+}
+namespace
+{
+    bool init = init_tile<Tiles::Mountains>(2);
+}
