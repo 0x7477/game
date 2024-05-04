@@ -67,9 +67,8 @@ void Map::display(sf::RenderWindow &window)
 
 void Map::drawCursor(sf::RenderWindow &window)
 {
-    const auto [cursor_x, cursor_y] = cursor;
     cursor_sprite.setScale(scale * tile_size / cursor_sprite.getTexture()->getSize().x, scale * tile_size / cursor_sprite.getTexture()->getSize().y);
-    cursor_sprite.setPosition(cursor_x * scale * tile_size, cursor_y * scale * tile_size);
+    cursor_sprite.setPosition(cursor.x * scale * tile_size, cursor.y * scale * tile_size);
     window.draw(cursor_sprite);
 }
 
@@ -179,7 +178,7 @@ void Map::handleEvents()
         {
             if (!tile.unit)
             {
-                if(!tile.interact(tile, *this))
+                if(!tile.interact(cursor, *this))
                     handleMenu();
             }
             else if (tile.unit->getTeam() == team)

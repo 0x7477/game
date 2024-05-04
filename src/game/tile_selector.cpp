@@ -11,9 +11,6 @@ void MovementSelector::fill(Map &map, const TileIndex &index, const int &remaini
     if (discovered_movement_costs.contains(index) && remaining_movement_speed <= std::get<int>(discovered_movement_costs[index]))
         return;
 
-    std::get<int>(discovered_movement_costs[index]) = remaining_movement_speed;
-    std::get<TileIndex>(discovered_movement_costs[index]) = last_index;
-
     auto &tile = map[index];
 
     bool is_movement_possible = true;
@@ -23,6 +20,8 @@ void MovementSelector::fill(Map &map, const TileIndex &index, const int &remaini
             return;
         is_movement_possible = tile.unit->allowUnitInteraction(unit);
     }
+
+    discovered_movement_costs[index] = {remaining_movement_speed, last_index};
 
     if (is_movement_possible)
         tile_indices.push_back(index);
@@ -53,24 +52,20 @@ std::optional<std::vector<TileIndex>> MovementSelector::getPath(Map &map, const 
 
     if (!discovered_movement_costs.contains(end))
         return {};
+    
 
     path.clear();
 
     TileIndex current_tile = end;
-
-    // int i = 10;
     while (current_tile != start)
     {
-        // std::cout << current_tile << "\n";
-        // if(i-- == 0)
-        //     break;
         path.push_back(current_tile);
+        assert(discovered_movement_costs.contains(current_tile));
         current_tile = std::get<TileIndex>(discovered_movement_costs[current_tile]);
     }
     path.push_back(start);
 
     std::reverse(path.begin(), path.end());
-    // std::getchar();
     return path;
 }
 
@@ -78,36 +73,22 @@ std::vector<TileIndex> AttackSelector::getTiles(Map &map, const TileIndex &tile_
 {
     std::vector<TileIndex> tiles{};
 
-    // std::cout << tile_index << "\n";
-    // std::cout << minimum_range << "\n";
-    // std::cout << maximum_range << "\n";
-
-    const auto [tile_x, tile_y] = tile_index;
-    for (unsigned y = std::min(0u, tile_y - maximum_range); y < std::max(map.height, tile_y + maximum_range); y++)
+    for (unsigned y = std::min(0u, tile_index.y - maximum_range); y < std::max(map.height, tile_index.y + maximum_range); y++)
     {
-        for (unsigned x = std::min(0u, tile_x - maximum_range); x < std::max(map.width, tile_x + maximum_range); x++)
+        for (unsigned x = std::min(0u, tile_index.x - maximum_range); x < std::max(map.width, tile_index.x + maximum_range); x++)
         {
-            // std::cout << x << ", " << y  << "\n";
-
-            const unsigned abs_distance = abs((int)x - (int)tile_x) + abs((int)y - (int)tile_y);
+            const unsigned abs_distance = abs((int)x - (int)tile_index.x) + abs((int)y - (int)tile_index.y);
             if (abs_distance < minimum_range || abs_distance > maximum_range)
                 continue;
-
-            // std::cout << __LINE__ << "\n";
 
             if (!map[x, y].unit)
                 continue;
 
-            // std::cout << __LINE__ << "\n";
-
             if (map[x, y].unit->getTeam() == unit.getTeam())
                 continue;
 
-            // std::cout << __LINE__ << "\n";
-
             if (!AttackSimulator::canAttack(unit, *map[x, y].unit))
                 continue;
-            // std::cout << __LINE__ << "\n";
 
             tiles.push_back({x, y});
         }

@@ -14,22 +14,23 @@
 #include <ui/action_menu.hpp>
 #include <game/visualization_mode.hpp>
 #include <game/tile_index.hpp>
+
+namespace Scene
+{
+    class Battle;
+}
+
 class Map
 {
 public:
-    Map(const std::string &data_string, const Team &team)
-        : cursor_sprite{gif_resources.get("unit_select.gif")},
+    Map(Scene::Battle& battle, const std::string &data_string, const Team &team)
+        : battle{battle}, cursor_sprite{gif_resources.get("unit_select.gif")},
           tiles{initTiles(data_string)}, width{(unsigned)tiles[0].size()}, height{(unsigned)tiles.size()},
           team{team}
     {
-
         (*this)[4, 4].unit = Unit::createUnit("Infantry", Team::Blue);
-
         (*this)[5, 4].unit = Unit::createUnit("TransportCopter", Team::Red);
-
         (*this)[6, 4].unit = Unit::createUnit("Infantry", Team::Red);;
-
-
     }
 
     std::vector<std::vector<unsigned>> getTileIds(const std::string &data_string);
@@ -53,45 +54,18 @@ public:
 
     std::vector<TileIndex> getNeighbors(const TileIndex &index)
     {
-        const auto [x, y] = index;
         std::vector<TileIndex> ret;
 
-        if (x > 0)
-            ret.push_back({x - 1, y});
-        if (x < width - 1)
-            ret.push_back({x + 1, y});
-        if (y > 0)
-            ret.push_back({x, y - 1});
-        if (y < height - 1)
-            ret.push_back({x, y + 1});
+        if (index.x > 0)
+            ret.push_back({index.x - 1, index.y});
+        if (index.x < width - 1)
+            ret.push_back({index.x + 1, index.y});
+        if (index.y > 0)
+            ret.push_back({index.x, index.y - 1});
+        if (index.y < height - 1)
+            ret.push_back({index.x, index.y + 1});
 
         return ret;
-    }
-
-    // void markTilesThatUnitCanMoveTo(const Unit &unit, const TileIndex &index)
-    // {
-    //     mode = UnitAction;
-    //     selected_unit = index;
-    //     // const auto movement_speed = unit.getMovementSpeed();
-    //     // const auto movement_type = unit.getMovementType();
-    //     clearMovementTiles();
-    //     // fillMovementTile(cursor_x, cursor_y, movement_speed, movement_type);
-    // }
-
-    void moveUnit(const TileIndex &from, const TileIndex &to)
-    {
-        if(from == to) return;
-        auto &target_tile = getTile(to);
-
-        if (target_tile.unit)
-        {
-            target_tile.unit->executeUnitInteraction(*this,from, to);
-        }
-        else
-        {
-            target_tile.unit = getTile(from).unit;
-            getTile(from).unit = nullptr;
-        }
     }
 
     void endTurn()
@@ -185,9 +159,9 @@ public:
             time_since_movement_button_was_pressed += delta_time;
     }
 
-    void createUnit(const std::string &id, const Team &team_id, const unsigned &x, const unsigned &y)
+    std::shared_ptr<Unit> createUnit(const std::string &id, const Team &team_id, const TileIndex &position)
     {
-        createUnit(id, team_id, tiles[y][x]);
+        return createUnit(id, team_id, getTile(position));
     }
 
     std::shared_ptr<Unit> createUnit(const std::string &id, const Team &team_id, Tile &tile)
@@ -196,9 +170,10 @@ public:
         return tile.unit;
     }
 
-    void createUnit(const std::shared_ptr<Unit> &unit, const unsigned &x, const unsigned &y)
+    std::shared_ptr<Unit> createUnit(const std::shared_ptr<Unit> &unit, const TileIndex &position)
     {
-        tiles[y][x].unit = unit;
+        (*this)[position].unit = unit;
+        return unit;
     }
 
     void clearTileEffects()
@@ -216,14 +191,12 @@ public:
 
     std::tuple<float, float> getScreenPosition(const TileIndex &index) const
     {
-        const auto [x, y] = index;
-        return {x * 16 * scale, y * 16 * scale};
+        return {index.x * 16 * scale, index.y * 16 * scale};
     }
 
     Tile &operator[](const TileIndex &index)
     {
-        const auto [x, y] = index;
-        return tiles[y][x];
+        return tiles[index.y][index.x];
     }
 
     Tile &operator[](const unsigned &x, const unsigned &y)
@@ -231,6 +204,7 @@ public:
         return tiles[y][x];
     }
 
+    Scene::Battle& battle;
     sf::Sprite cursor_sprite;
     std::vector<std::vector<Tile>> tiles{};
     unsigned width, height;

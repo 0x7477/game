@@ -9,6 +9,7 @@
 #include <game/map.hpp>
 #include <game/tile_selector.hpp>
 #include <game/attack_simulator.hpp>
+#include <scenes/battle.hpp>
 
 Unit::Unit(const Team &team, const Stats &stats, const std::source_location &location)
     : id{getClassName(location)},
@@ -66,10 +67,35 @@ bool Unit::select(Map &map, const TileIndex &index)
     return true;
 }
 
-void Unit::attack(Map &map, const TileIndex &me, const TileIndex &target)
+
+void Unit::move(Map &map, const TileIndex &from, const TileIndex &to)
 {
-    const auto new_position = movement_manager.getEndPosition();
-    map.moveUnit(me, new_position);
+    if (from == to)
+        return;
+    auto &target_tile = map.getTile(to);
+
+    if (target_tile.unit)
+    {
+        target_tile.unit->executeUnitInteraction(map, from, to);
+    }
+    else
+    {
+        target_tile.unit = map.getTile(from).unit;
+        map.getTile(from).unit = nullptr;
+    }
+}
+
+template<>
+void Unit::action<Unit::ActionId::Wait>(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &)
+{
+    move(map, me, new_position);
+    endTurn(map);
+}
+
+template<>
+void Unit::action<Unit::ActionId::Attack>(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)
+{
+    move(map, me, new_position);
 
     const auto result = AttackSimulator::attack(map, new_position, target);
     if (result.attacker_died)
@@ -103,7 +129,6 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
         const auto target_tile = map.getTile(target);
         const auto has_target_unit = target_tile.unit;
 
-
         if (!has_target_unit || target == me)
         {
             const auto possible_attack_tiles = AttackSelector::getTiles(map, target, *this, 1, 1);
@@ -116,9 +141,10 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
                     map.mode = SelectTarget;
                     map.selectable_targets = possible_attack_tiles;
 
-                    map.select_function = [this, &map, me](const TileIndex &unit_to_attack)
+                    map.select_function = [this, &map, target, me](const TileIndex &unit_to_attack)
                     {
-                        attack(map, me, unit_to_attack);
+                        action<Attack>(map, me, target, unit_to_attack);
+                        map.battle.sendAction(Wait, movement_manager.getPath(), unit_to_attack);
                     };
                 };
             }
@@ -148,8 +174,8 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
 
             actions["Wait"] = [=, this, &map]()
             {
-                map.moveUnit(me, target);
-                endTurn(map);
+                action<Wait>(map, me, target, target);
+                map.battle.sendAction(Wait, movement_manager.getPath(), target);
             };
         }
         auto execute_action = [this, options, actions](const std::size_t &index) mutable

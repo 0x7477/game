@@ -3,12 +3,17 @@
 #include <iostream>
 #include <vector>
 
-typedef std::tuple<unsigned, unsigned> TileIndex;
+class TileIndex
+{
+public:
+    TileIndex(){};
+    TileIndex(const unsigned &x, const unsigned &y);
 
-void serialize(std::vector<char> &buffer, const TileIndex &value);
-void deserialize(std::string_view &buffer, TileIndex &value);
+    bool operator==(const TileIndex& other) const;
+    bool operator<(const TileIndex& other) const;
+    static bool areTileIndexesAdjacent(const TileIndex &a, const TileIndex &b);
+    static unsigned distance(const TileIndex &a, const TileIndex &b);
+    unsigned x{0}, y{0};
+};
 
-bool areTileIndexesAdjacent(const TileIndex& a,const TileIndex& b);
-unsigned distance(const TileIndex& a,const TileIndex& b);
-
-std::ostream& operator<< (std::ostream& os, const TileIndex& index);
+std::ostream & operator<<(std::ostream &os, const TileIndex &index);

@@ -26,13 +26,24 @@ void MovementManager::stop()
     is_moving = false;
 }
 
-TileIndex MovementManager::getEndPosition()
+TileIndex MovementManager::getEndPosition() const
 {
     return path[path.size() - 1];
 }
 
+void MovementManager::setPath(const std::vector<TileIndex> &path_)
+{
+    path = path_;
+}
+
+std::vector<TileIndex> MovementManager::getPath() const
+{
+    return path;
+}
+
 void MovementManager::updatePath(Map &map, const TileIndex &index)
 {
+    // std::cout << __FILE__ << ":" << __LINE__ << "\n";
     if (index == getEndPosition())
         return;
 
@@ -45,11 +56,12 @@ void MovementManager::updatePath(Map &map, const TileIndex &index)
     {
         path.resize(std::distance(path.begin(), path_index) + 1);
         updatePathCosts(map);
+
         return;
     }
 
     // test if we can expand
-    const auto are_tiles_adjacent = areTileIndexesAdjacent(getEndPosition(), index);
+    const auto are_tiles_adjacent = TileIndex::areTileIndexesAdjacent(getEndPosition(), index);
     if (!are_tiles_adjacent)
     {
         recalculatePath(map, path[0], index);
@@ -104,8 +116,6 @@ std::tuple<float, float> MovementManager::getCurrentPosition(const Map &map, con
     const auto start = path[current_tile];
     const auto end = path[current_tile + 1];
 
-    // const auto [start_x_index, start_y_index] = start;
-    // const auto [end_x_index, end_y_index] = end;
     const auto [start_x, start_y] = map.getScreenPosition(start);
     const auto [end_x, end_y] = map.getScreenPosition(end);
 
@@ -138,21 +148,17 @@ void MovementManager::displayPath(sf::RenderWindow &window, Map &map)
     for (unsigned i{0}; i < path.size() - 1; i++)
     {
         const auto first_tile = path[i];
-        const auto [first_tile_x, first_tile_y] = first_tile;
-
         const auto next_tile = path[i + 1];
-        const auto [next_tile_x, next_tile_y] = next_tile;
 
-        int dx = next_tile_x - first_tile_x;
-        int dy = next_tile_y - first_tile_y;
+        int dx = next_tile.x - first_tile.x;
+        int dy = next_tile.y - first_tile.y;
 
         const auto is_last_tile = path.size() == i + 2;
         if (!is_last_tile)
         {
             const auto next_next_tile = path[i + 2];
-            const auto [next_next_tile_x, next_next_tile_y] = next_next_tile;
-            dx += 2 * (next_next_tile_x - next_tile_x);
-            dy += 2 * (next_next_tile_y - next_tile_y);
+            dx += 2 * (next_next_tile.x - next_tile.x);
+            dy += 2 * (next_next_tile.y - next_tile.y);
         }
 
         const auto [x, y] = map.getScreenPosition(next_tile);

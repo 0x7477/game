@@ -18,7 +18,8 @@ public:
     void init(const TileIndex &start);
     void startAnimation(const std::function<void()>& on_animation_finished);
 
-    TileIndex getEndPosition();
+    TileIndex getEndPosition() const;
+    std::vector<TileIndex> getPath() const;
 
     bool isMoving() const;
 
@@ -29,6 +30,7 @@ public:
     void displayPath(sf::RenderWindow& window, Map& map);
 
     void updatePath(Map& map, const TileIndex& tile);
+    void setPath(const std::vector<TileIndex>& path);
 
 
     void recalculatePath(Map &map, const TileIndex &start, const TileIndex &end);

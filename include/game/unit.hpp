@@ -26,7 +26,6 @@ public:
         MovementType movement_type;
     };
 
-
     struct Status
     {
         bool finished : 1 {false};
@@ -42,8 +41,17 @@ public:
         std::string name;
         std::function<void()> execute;
     };
-    
-    Unit(const Team& team, const Stats &stats, const std::source_location &location = std::source_location::current());
+
+    enum ActionId : uint8_t
+    {
+        Wait,
+        Attack,
+        Unload,
+        Capture,
+        Fire
+    };
+
+    Unit(const Team &team, const Stats &stats, const std::source_location &location = std::source_location::current());
 
     void displayPath(sf::RenderWindow &window, Map &map);
     void display(sf::RenderWindow &window, const Map &map, const TileIndex &index);
@@ -54,11 +62,11 @@ public:
     static void registerClass()
     {
         const auto id = getClassName();
-        library[id] = [=](const Team& team) -> std::shared_ptr<Unit>
+        library[id] = [=](const Team &team) -> std::shared_ptr<Unit>
         { return std::make_shared<T>(team); };
     }
 
-    static std::shared_ptr<Unit> createUnit(const std::string &id, const Team& team);
+    static std::shared_ptr<Unit> createUnit(const std::string &id, const Team &team);
 
     static std::string getClassName(const std::source_location &location = std::source_location::current())
     {
@@ -75,10 +83,12 @@ public:
     bool select(Map &map, const TileIndex &index);
     void act(Map &map, const TileIndex &me, const TileIndex &target);
 
+    void move(Map &map, const TileIndex &from, const TileIndex &to);
+
     void displayMovementTiles(Map &map, const TileIndex &index);
 
-    void attack(Map &map, const TileIndex &me, const TileIndex &target);
-
+    template <ActionId id>
+    void action(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target);
 
     MovementType getMovementType() const { return stats.movement_type; }
     unsigned getMovementSpeed() const { return stats.movement_speed; }
@@ -88,37 +98,37 @@ public:
         return false;
     }
 
-    virtual std::vector<Action> getUnitInteractionOption(Map &map, const TileIndex &unit, const TileIndex &me) {return {};}; //TODO ADD JOIN HERE
+    virtual std::vector<Action> getUnitInteractionOption(Map &map, const TileIndex &unit, const TileIndex &me) { return {}; }; // TODO ADD JOIN HERE
 
+    virtual void executeUnitInteraction(Map &map, const TileIndex &unit, const TileIndex &me) {}
 
-    virtual void executeUnitInteraction(Map &map, const TileIndex &unit,const TileIndex &me) {}
-
-    virtual std::vector<Action> handlePossibleActions(Map &map, const TileIndex &me,const TileIndex &target){return {};}
+    virtual std::vector<Action> handlePossibleActions(Map &map, const TileIndex &me, const TileIndex &target) { return {}; }
 
     Team getTeam() const { return team; }
 
     void setTeam(const Team &team_) { team = team_; }
-    void setFinished(const bool& finished = true) {status.finished = finished; }
+    void setFinished(const bool &finished = true) { status.finished = finished; }
 
     unsigned getUnitCount() const;
 
-    void updateCursor(Map& map, const TileIndex& cursor);
+    void updateCursor(Map &map, const TileIndex &cursor);
     std::string id;
     UI::GIF sprite;
     constexpr static int max_health{100};
     int health{max_health};
     unsigned ammo{0};
-    static inline std::map<std::string, std::function<std::shared_ptr<Unit>(const Team&)>> library;
+    static inline std::map<std::string, std::function<std::shared_ptr<Unit>(const Team &)>> library;
 
-    void endTurn(Map& map);
+    void endTurn(Map &map);
+
 protected:
-    
     Stats stats;
     Status status;
     Team team{Team::Red};
 
 public:
     MovementManager movement_manager;
+
 protected:
     sf::Text health_text;
 };

@@ -16,12 +16,12 @@ class Tile;
 
 struct TileUnitInteraction
 {
-    virtual void interact(Tile &tile, Map &map) const {}
+    virtual void interact(Map &map, const TileIndex &tile) const {}
 };
 
 struct TilePlayerInteraction
 {
-    virtual bool interact(Tile &tile, Map &map) const {return false;}
+    virtual bool interact(Map &map, const TileIndex &tile) const {return false;}
 };
 
 struct NoTilePlayerInteraction : public TilePlayerInteraction
@@ -83,9 +83,9 @@ public:
         display_mode = new_display_mode;
     }
 
-    bool interact(Tile &tile, Map &map)
+    bool interact(const TileIndex &tile, Map &map)
     {
-        return info.player_interaction.interact(tile, map);
+        return info.player_interaction.interact(map, tile);
     }
 
 

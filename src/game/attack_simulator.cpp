@@ -69,9 +69,7 @@ AttackSimulator::AttackResult AttackSimulator::attack(Map &map, const TileIndex 
     const auto defender_died = defender->health <= 0;
     const auto can_defender_attack_attacker = damage_table.contains({defender->id, attacker->id});
 
-    const auto tile_index_dx = std::abs((int)std::get<0>(attacker_index) - (int)std::get<0>(defender_index));
-    const auto tile_index_dy = std::abs((int)std::get<1>(attacker_index) - (int)std::get<1>(defender_index));
-    const auto was_direct_attack = (tile_index_dx + tile_index_dy) == 1;
+    const auto was_direct_attack = TileIndex::areTileIndexesAdjacent(attacker_index,defender_index);
 
     const auto does_defender_counterattack = !defender_died && can_defender_attack_attacker && was_direct_attack;
 

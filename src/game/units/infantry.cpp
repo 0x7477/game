@@ -20,7 +20,7 @@ namespace Units
                          capture_progress = 0;
 
                     capture_progress += getUnitCount();
-                    map.moveUnit(me, target);
+                    move(map, me, target);
                     if (capture_progress >= 20)
                         map[target].setTeam(team);
 
