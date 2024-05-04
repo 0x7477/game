@@ -7,6 +7,8 @@
 #include <engine/scene.hpp>
 #include <game/map.hpp>
 #include <network/network_manager.hpp>
+#include <game/game.hpp>
+
 namespace Scene
 {
 
@@ -16,15 +18,12 @@ namespace Scene
         Battle(WindowManager &window_manager, network::NetworkManager &network_manager, const std::string &map_data);
         virtual void run() override;
 
-        void sendAction(const Unit::ActionId& id, const std::vector<TileIndex>& path, const TileIndex& target);
-        void sendCreateUnit(const std::string& unit_id, const Team& team, const TileIndex& target);
-
     private:
         sf::RenderWindow window;
         network::NetworkManager &network_manager;
 
     public:
-        Map map;
+        Game game;
     };
 
 }

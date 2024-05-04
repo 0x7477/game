@@ -12,6 +12,7 @@
 #include <optional>
 #include <game/teams.hpp>
 #include <ui/gif.hpp>
+#include <array>
 
 class Tile;
 class Map;
@@ -42,13 +43,17 @@ public:
         std::function<void()> execute;
     };
 
+    typedef std::function<void(Map& map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)> UnitActionFunction;
+
     enum ActionId : uint8_t
     {
         Wait,
         Attack,
         Unload,
+        Load,
         Capture,
-        Fire
+        Fire,
+        ActionIdCount
     };
 
     Unit(const Team &team, const Stats &stats, const std::source_location &location = std::source_location::current());
@@ -80,15 +85,18 @@ public:
         return function_name.substr(start, end - start);
     }
 
+    //actions
+    void executeAction(const ActionId& action, Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target);
+    void executeWaitAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target = {});
+    void executeLoadAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target = {});
+    void executeUnloadAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target = {});
+    void executeAttackAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target);
+
+
     bool select(Map &map, const TileIndex &index);
     void act(Map &map, const TileIndex &me, const TileIndex &target);
-
     void move(Map &map, const TileIndex &from, const TileIndex &to);
-
     void displayMovementTiles(Map &map, const TileIndex &index);
-
-    template <ActionId id>
-    void action(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target);
 
     MovementType getMovementType() const { return stats.movement_type; }
     unsigned getMovementSpeed() const { return stats.movement_speed; }
@@ -119,12 +127,14 @@ public:
     unsigned ammo{0};
     static inline std::map<std::string, std::function<std::shared_ptr<Unit>(const Team &)>> library;
 
-    void endTurn(Map &map);
+    void endTurn(Map &map, const bool& finished = true);
 
 protected:
     Stats stats;
     Status status;
     Team team{Team::Red};
+
+    std::array<UnitActionFunction, ActionIdCount> actions{nullptr};
 
 public:
     MovementManager movement_manager;

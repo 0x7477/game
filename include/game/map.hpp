@@ -15,18 +15,15 @@
 #include <game/visualization_mode.hpp>
 #include <game/tile_index.hpp>
 
-namespace Scene
-{
-    class Battle;
-}
+class Game;
+
 
 class Map
 {
 public:
-    Map(Scene::Battle& battle, const std::string &data_string, const Team &team)
-        : battle{battle}, cursor_sprite{gif_resources.get("unit_select.gif")},
-          tiles{initTiles(data_string)}, width{(unsigned)tiles[0].size()}, height{(unsigned)tiles.size()},
-          team{team}
+    Map(Game& game, const std::string &data_string)
+        : game{game}, cursor_sprite{gif_resources.get("unit_select.gif")},
+          tiles{initTiles(data_string)}, width{(unsigned)tiles[0].size()}, height{(unsigned)tiles.size()}
     {
         (*this)[4, 4].unit = Unit::createUnit("Infantry", Team::Blue);
         (*this)[5, 4].unit = Unit::createUnit("TransportCopter", Team::Red);
@@ -204,11 +201,11 @@ public:
         return tiles[y][x];
     }
 
-    Scene::Battle& battle;
+    Game& game;
     sf::Sprite cursor_sprite;
     std::vector<std::vector<Tile>> tiles{};
     unsigned width, height;
-    Team team;
+    Team team{Red};
     // float pos_x, pos_y;
     TileIndex cursor{1, 1};
     std::optional<TileIndex> selected_unit{};

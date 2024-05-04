@@ -148,7 +148,7 @@ void Scene::Lobby::setLobbyId(const network::Datagram<std::string> &data)
     id = data.get();
     room_number.setString(id);
     joined = true;
-    battle.map.team = Team::Red;
+    battle.game.map.team = Team::Red;
 
     lobby.addPlayer({username, network_manager.getID()});
 }
@@ -253,6 +253,6 @@ void Scene::Lobby::onJoined(const std::optional<std::string> &error_)
         for (const auto &[id, _] : lobby.players)
             std::cout << "player " << id << " in lobby\n";
         joined = true;
-        battle.map.team = Team::Blue;
+        battle.game.map.team = Team::Blue;
     }
 }

@@ -1,6 +1,6 @@
 #include <game/tile.hpp>
 #include <game/map.hpp>
-#include <scenes/battle.hpp>
+#include <game/game.hpp>
 
 const std::vector<std::string> factory_produced_units{"Infantry", "TransportCopter"};
 struct ProduceUnit : public TilePlayerInteraction
@@ -13,8 +13,7 @@ struct ProduceUnit : public TilePlayerInteraction
 
         map.shopping_menu.setOptions(factory_produced_units, [&](const std::size_t &index)
                                      {
-
-                                    map.battle.sendCreateUnit(factory_produced_units[index], map.team, tile_index);
+            map.game.sendCreateUnit(factory_produced_units[index], map.team, tile_index);
             const auto unit = map.createUnit(factory_produced_units[index], map.team, tile_index);
             unit->setFinished();
             map.mode = ViewMode::View; }, [&]()

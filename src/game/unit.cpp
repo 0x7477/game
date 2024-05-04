@@ -16,6 +16,9 @@ Unit::Unit(const Team &team, const Stats &stats, const std::source_location &loc
       sprite{"units/" + id + "/" + std::to_string(team) + "/idle/", "resources/images/"},
       stats{stats}, team{team}, movement_manager{*this}, health_text{"", font_resources.get("arial.ttf")}
 {
+    actions[Wait]   = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target){this->executeWaitAction(map, me, new_position, target);};
+    actions[Attack] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target){this->executeAttackAction(map, me, new_position, target);};
+    actions[Load] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target){this->executeLoadAction(map, me, new_position, target);};
 }
 
 void Unit::displayPath(sf::RenderWindow &window, Map &map)
@@ -54,7 +57,7 @@ void Unit::displayMovementTiles(Map &map, const TileIndex &index)
     const auto possible_movement_tiles = MovementSelector::getTiles(map, index, *this);
 
     for (const auto &tile_index : possible_movement_tiles)
-        map.getTile(tile_index).setDisplayMode(Tile::Move);
+        map[tile_index].setDisplayMode(Tile::Move);
 }
 
 bool Unit::select(Map &map, const TileIndex &index)
@@ -67,12 +70,11 @@ bool Unit::select(Map &map, const TileIndex &index)
     return true;
 }
 
-
 void Unit::move(Map &map, const TileIndex &from, const TileIndex &to)
 {
     if (from == to)
         return;
-    auto &target_tile = map.getTile(to);
+    auto &target_tile = map[to];
 
     if (target_tile.unit)
     {
@@ -80,20 +82,30 @@ void Unit::move(Map &map, const TileIndex &from, const TileIndex &to)
     }
     else
     {
-        target_tile.unit = map.getTile(from).unit;
-        map.getTile(from).unit = nullptr;
+        target_tile.unit = map[from].unit;
+        map[from].unit = nullptr;
     }
 }
 
-template<>
-void Unit::action<Unit::ActionId::Wait>(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &)
+void Unit::executeAction(const ActionId& action, Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)
+{
+    assert(actions[action] != nullptr);
+    actions[action](map, me, new_position, target);
+}
+
+void Unit::executeWaitAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &)
 {
     move(map, me, new_position);
     endTurn(map);
 }
 
-template<>
-void Unit::action<Unit::ActionId::Attack>(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)
+void Unit::executeLoadAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &)
+{
+    move(map, me, new_position);
+    endTurn(map, false);
+}
+
+void Unit::executeAttackAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)
 {
     move(map, me, new_position);
 
@@ -126,7 +138,7 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
         std::map<std::string, std::function<void()>> actions{};
         std::vector<std::string> options{}; // need to check if wait or join
 
-        const auto target_tile = map.getTile(target);
+        const auto target_tile = map[target];
         const auto has_target_unit = target_tile.unit;
 
         if (!has_target_unit || target == me)
@@ -143,8 +155,8 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
 
                     map.select_function = [this, &map, target, me](const TileIndex &unit_to_attack)
                     {
-                        action<Attack>(map, me, target, unit_to_attack);
-                        map.battle.sendAction(Wait, movement_manager.getPath(), unit_to_attack);
+                        executeAttackAction(map, me, target, unit_to_attack);
+                        map.game.sendAction(Attack, movement_manager.getPath(), unit_to_attack);
                     };
                 };
             }
@@ -174,8 +186,8 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
 
             actions["Wait"] = [=, this, &map]()
             {
-                action<Wait>(map, me, target, target);
-                map.battle.sendAction(Wait, movement_manager.getPath(), target);
+                executeWaitAction(map, me, target, target);
+                map.game.sendAction(Wait, movement_manager.getPath(), target);
             };
         }
         auto execute_action = [this, options, actions](const std::size_t &index) mutable
@@ -206,10 +218,11 @@ unsigned Unit::getUnitCount() const
     return (health + 9) / 10;
 }
 
-void Unit::endTurn(Map &map)
+void Unit::endTurn(Map &map, const bool& set_finished)
 {
     movement_manager.stop();
     map.selected_unit = {};
     map.mode = View;
-    setFinished();
+    if(set_finished)
+        setFinished();
 }

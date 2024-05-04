@@ -103,10 +103,10 @@ std::vector<TileIndex> UnloadSelector::getTiles(Map &map, const TileIndex &tile_
 
     for (const auto &neighbour : map.getNeighbors(tile_index))
     {
-        if (map.getTile(neighbour).getMovementCost(unit.getMovementType()) == 0)
+        if (map[neighbour].getMovementCost(unit.getMovementType()) == 0)
             continue;
 
-        if (map.getTile(neighbour).unit)
+        if (map[neighbour].unit)
             continue;
 
         tiles.push_back(neighbour);

@@ -2,7 +2,6 @@
 
 #include <network/client.hpp>
 #include <network/network_manager.hpp>
-#include <scenes/game.hpp>
 #include <scenes/battle.hpp>
 
 #include <engine/window_manager.hpp>

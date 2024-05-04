@@ -69,7 +69,7 @@ void MovementManager::updatePath(Map &map, const TileIndex &index)
         return;
     }
 
-    const auto costs_needed_to_reach_new_tile = map.getTile(index).getMovementCost(unit.getMovementType());
+    const auto costs_needed_to_reach_new_tile = map[index].getMovementCost(unit.getMovementType());
     if (unit.getMovementSpeed() < costs_needed_to_reach_new_tile + current_movement_costs)
     {
         // check if we can optimize our path
@@ -87,7 +87,7 @@ void MovementManager::updatePathCosts(Map &map)
     current_movement_costs = 0;
 
     for (unsigned i = 1; i < path.size(); i++)
-        current_movement_costs += map.getTile(path[i]).getMovementCost(unit.getMovementType());
+        current_movement_costs += map[path[i]].getMovementCost(unit.getMovementType());
 }
 
 bool MovementManager::isMoving() const
