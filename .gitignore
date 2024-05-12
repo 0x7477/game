@@ -1,2 +1,4 @@
 build/
 .vscode
+docker_image
+.gitignore

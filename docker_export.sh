@@ -1,0 +1,1 @@
+docker save $(docker build -q .) > docker_image

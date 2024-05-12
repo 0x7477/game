@@ -1,0 +1,1 @@
+docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -p 2001:2001 $(docker build -q .)
