@@ -4,10 +4,25 @@
 #include <game/tile_selector.hpp>
 #include <cmath>
 MovementManager::MovementManager(const Unit &unit)
-    : unit{unit}
+    : unit{unit}, 
+    idle{"units/" + unit.id + "/" + std::to_string(unit.getTeam()) + "/idle/", "resources/images/"},
+    up{"units/" + unit.id + "/" + std::to_string(unit.getTeam()) + "/up/", "resources/images/"},
+    down{"units/" + unit.id + "/" + std::to_string(unit.getTeam()) + "/down/", "resources/images/"},
+    left{"units/" + unit.id + "/" + std::to_string(unit.getTeam()) + "/left/", "resources/images/"},
+    right{"units/" + unit.id + "/" + std::to_string(unit.getTeam()) + "/right/", "resources/images/"}
 {
 }
+void MovementManager::draw(sf::RenderWindow &window, const Map &map, const TileIndex &index)
+{
+    const auto offset = map.scale * 3.0;
 
+    const auto [x, y] = getCurrentPosition(map, index);
+
+    current_animation->setColor(unit.status.finished ? sf::Color(100, 100, 100) : sf::Color::White);
+    current_animation->display(window, x, y - offset, map.scale);
+
+
+}
 void MovementManager::init(const TileIndex &start)
 {
     path = {start};
@@ -47,7 +62,9 @@ void MovementManager::updatePath(Map &map, const TileIndex &index)
     if (index == getEndPosition())
         return;
 
-    const auto cant_go_through_tile = map[index].unit && map[index].unit->getTeam() != map.team;
+    const auto movement_costs = map[index].getMovementCost(unit.getMovementType());
+
+    const auto cant_go_through_tile = (map[index].unit && map[index].unit->getTeam() != map.team) ||  movement_costs == 0;
     if (cant_go_through_tile)
         return;
 
@@ -106,7 +123,10 @@ void MovementManager::recalculatePath(Map &map, const TileIndex &start, const Ti
 std::tuple<float, float> MovementManager::getCurrentPosition(const Map &map, const TileIndex &pos)
 {
     if (!isMoving())
+    {
+        current_animation = &idle;
         return map.getScreenPosition(pos);
+    }
 
     delta_time.update();
 
@@ -121,6 +141,24 @@ std::tuple<float, float> MovementManager::getCurrentPosition(const Map &map, con
 
     float dx = end_x - start_x;
     float dy = end_y - start_y;
+
+    // std::cout << ((int)start.x - (int)end.x) << " " << ((int)start.y - (int)end.y) << "\n";
+    if(path.size() > 1)
+    {
+    if(((int)start.x - (int)end.x) > 0)
+        current_animation = &left;
+    else if(((int)start.x - (int)end.x) < 0)
+        current_animation = &right;
+    else if(((int)start.y - (int)end.y) > 0)
+        current_animation = &up;
+    else if(((int)start.y - (int)end.y) < 0)
+        current_animation = &down;
+    }
+    else
+    {
+        current_animation = &down;
+    }
+
 
     float percent{std::fmod(time_passed, seconds_per_tile) / seconds_per_tile};
 

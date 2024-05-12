@@ -37,7 +37,7 @@ class Pattern
     }
 
     Pattern(){}
-    Pattern(const TileImage &image, const std::size_t &dimension, const std::size_t &x_pos, const std::size_t &y_pos, const Configuration &configuration)
+    Pattern(const TileImage &image, const std::size_t &dimension, const std::size_t &x_pos, const std::size_t &y_pos, const Configuration &)
     :dimension{dimension}
     {
         tiles.reserve(dimension * dimension);

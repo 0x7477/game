@@ -5,7 +5,7 @@ namespace Tiles
     struct Woods : Tile
     {
         Woods()
-            : Tile({2, {1, 1, 2,3, 0, 0, 1, 0}})
+            : Tile({2, MovementCosts{{1, 1, 2,3, 0, 0, 1, 0}}})
         {
         }
     };

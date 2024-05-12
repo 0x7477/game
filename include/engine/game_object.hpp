@@ -27,7 +27,7 @@ public:
     std::unordered_map<std::type_index, std::any> components;
 
     virtual void update(){};
-    virtual void display(sf::RenderWindow &window){};
+    virtual void display(sf::RenderWindow &){};
 
 
     

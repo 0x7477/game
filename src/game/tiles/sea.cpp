@@ -5,7 +5,7 @@ namespace Tiles
     struct Sea : Tile
     {
         Sea()
-            : Tile({0, {0, 0, 0,0, 1, 1, 1, 0}})
+            : Tile({0, MovementCosts{{0, 0, 0,0, 1, 1, 1, 0}}})
         {
         }
     };

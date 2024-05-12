@@ -68,7 +68,7 @@ namespace network
                     for (const auto &[ptr, data] : network_manager->infos)
                     {
                         auto client_ptr = reinterpret_cast<uv_stream_t *>(ptr);
-                        network_manager->interface.send(serialized, client_ptr);
+                        network_manager->interface.sendTo(serialized, client_ptr);
                     }
                 }
             }

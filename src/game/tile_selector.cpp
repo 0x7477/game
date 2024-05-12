@@ -81,6 +81,9 @@ std::vector<TileIndex> AttackSelector::getTiles(Map &map, const TileIndex &tile_
             if (abs_distance < minimum_range || abs_distance > maximum_range)
                 continue;
 
+            if(map[x, y].isAttackable(map, {x,y}, unit))
+                tiles.push_back({x, y});
+
             if (!map[x, y].unit)
                 continue;
 

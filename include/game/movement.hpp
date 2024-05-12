@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 
 enum MovementType
 {
@@ -7,7 +8,12 @@ enum MovementType
 
 struct MovementCosts
 {
-    unsigned costs[MovementTypeCount];
+
+    MovementCosts(const std::array<unsigned,MovementTypeCount> & costs)
+    :costs{costs}
+    {}
+
+    std::array<unsigned,MovementTypeCount> costs;
 
     unsigned getCosts(const MovementType& type)
     {

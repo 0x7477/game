@@ -1,15 +1,21 @@
+#include <game/tile.hpp>
+#include <game/map.hpp>
+#include <game/game.hpp>
 
 
-// #include <game/tile.hpp>
+namespace Tiles
+{
+    struct CommunicationTower : Tile
+    {
+        CommunicationTower() : Tile(TileInfo{.defense = 3, .movement_costs = MovementCosts{{1, 1, 1, 1, 0, 1, 1, 0}}})
+        {
+        }
+    };
+}
 
-// namespace Tiles
-// {
-//     class CommunicationTower : Tile
-//     {
-//         CommunicationTower()
-//             : movement_costs{1,1, 1, 1, 0, 0, 1, 0},
-//               defense{3}
-//         {
-//         }
-//     };
-// }
+namespace
+{
+    bool init = init_tile<Tiles::CommunicationTower>(129) &&
+                init_tile<Tiles::CommunicationTower>(134, Red) &&
+                init_tile<Tiles::CommunicationTower>(133, Blue);
+}

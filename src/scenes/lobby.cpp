@@ -121,7 +121,10 @@ void Scene::Lobby::setReady(const unsigned &id)
     lobby.players[id].ready = true;
 
     if(lobby.areAllMembersReady())
+    {
+        battle.game.commitLobby(lobby);
         setScene("map");      
+    }
 }
 
 void Scene::Lobby::sendReady()

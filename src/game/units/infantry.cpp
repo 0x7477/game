@@ -18,13 +18,11 @@ namespace Units
         }
 
 
-        void executeCaptureAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)
+        void executeCaptureAction(Map &map, const TileIndex &me, const TileIndex &, const TileIndex &target)
         {
-            if(capturing_tile_index && *capturing_tile_index != target)
-                    capture_progress = 0;
-
-            capture_progress += getUnitCount();
             move(map, me, target);
+            capture_progress += getUnitCount();
+
             if (capture_progress >= 20)
                 map[target].setTeam(team);
 
@@ -34,7 +32,13 @@ namespace Units
         virtual std::vector<Action> handlePossibleActions(Map &map,const TileIndex &me, const TileIndex &target) override
         {
             std::vector<Action> actions{};
-            if (map[target].getId() == "Base" && map[target].team != map.team)
+            if ((  map[target].getId() == "Base" 
+                || map[target].getId() == "City" 
+                || map[target].getId() == "Port" 
+                || map[target].getId() == "Headquarter" 
+                || map[target].getId() == "Lab" 
+                || map[target].getId() == "CommunicationTower" 
+                || map[target].getId() == "Airport") && map[target].team != map.team)
                 actions.push_back(Action{.name = "Capture", .execute = [&map, me, target, this]()
                 {
                     executeCaptureAction(map, me, target, target);
@@ -44,7 +48,6 @@ namespace Units
             return actions;
         }
 
-        std::optional<TileIndex> capturing_tile_index{};
         unsigned capture_progress{0};
     };
 

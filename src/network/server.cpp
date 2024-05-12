@@ -58,7 +58,7 @@ void network::Server::onConnection(uv_stream_t *server)
     if (uv_accept(server, reinterpret_cast<uv_stream_t *>(client)) == 0)
     {
         uv_read_start(
-            reinterpret_cast<uv_stream_t *>(client), [](uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
+            reinterpret_cast<uv_stream_t *>(client), [](uv_handle_t *, size_t suggested_size, uv_buf_t *buf)
             {
                 buf->base = new char[suggested_size];
                 buf->len = suggested_size; },
@@ -77,7 +77,7 @@ void network::Server::onConnection(uv_stream_t *server)
     }
 }
 
-void network::Server::send(const std::string_view &message, uv_stream_t *client)
+void network::Server::sendTo(const std::string_view &message, uv_stream_t *client)
 {
     uv_buf_t buf = uv_buf_init(const_cast<char *>(message.data()), message.size());
     uv_write_t *writeReq = new uv_write_t;

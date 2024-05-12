@@ -38,7 +38,7 @@ void network::Client::connect()
 }
 
 
-void network::Client::send(const std::string_view &message, uv_stream_t *client)
+void network::Client::sendTo(const std::string_view &message, uv_stream_t *)
 {
     send(message);
 }
@@ -59,7 +59,7 @@ void network::Client::send(const std::string_view &message)
 void network::Client::startReceiving()
 {
     uv_read_start(
-        reinterpret_cast<uv_stream_t *>(client), [](uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
+        reinterpret_cast<uv_stream_t *>(client), [](uv_handle_t *, size_t suggested_size, uv_buf_t *buf)
         { *buf = uv_buf_init(new char[suggested_size], suggested_size); },
         [](uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
         {

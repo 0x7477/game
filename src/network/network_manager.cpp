@@ -1,6 +1,6 @@
 #include <network/network_manager.hpp>
 
-auto say_hi(const network::Datagram<> &data)
+auto say_hi(const network::Datagram<> &)
 {
     std::cout << "hi\n";
 }
@@ -45,7 +45,7 @@ network::NetworkManager::NetworkManager(Client &interface)
     init();
 }
 
-network::RPC<network::Datagram<>, [](const auto &data)
+network::RPC<network::Datagram<>, [](const auto &)
              {
                  static unsigned int max_id = 1;
                  return network::Datagram{max_id++};
@@ -70,7 +70,7 @@ void network::NetworkManager::setConnected(const bool &connected)
 void network::NetworkManager::clientConnected(uv_stream_t *client)
 {
     for (const auto &message : buffered_messages)
-        interface.send(message, client);
+        interface.sendTo(message, client);
 }
 
 void network::NetworkManager::connectionClosed()
@@ -145,7 +145,7 @@ void network::NetworkManager::executeRPCs()
                     auto client_ptr = reinterpret_cast<uv_stream_t *>(ptr);
                     if (client_ptr == client->client_stream)
                         continue;
-                    interface.send(*message, client_ptr);
+                    interface.sendTo(*message, client_ptr);
                 }
             }
 
@@ -165,7 +165,7 @@ void network::NetworkManager::executeRPC(const RPCPacketHeader &header, const st
     if (!result)
         return;
 
-    interface.send(*result, client.client_stream);
+    interface.sendTo(*result, client.client_stream);
 }
 
 bool network::NetworkManager::isServer()

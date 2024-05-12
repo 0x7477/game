@@ -5,15 +5,15 @@ namespace Tiles
     struct River : Tile
     {
         River()
-            : Tile({2, {2, 1, 0, 0, 0, 1, 0}})
+            : Tile({2, MovementCosts{{2, 1, 0, 0, 0, 0, 1, 0}}})
         {
         }
     };
 }
 namespace
 {
-    bool init = init_tile<Tiles::River>(4, Tile::H)&&
-                init_tile<Tiles::River>(5, Tile::V)&&
+    bool init = init_tile<Tiles::River>(4, Tile::H) &&
+                init_tile<Tiles::River>(5, Tile::V) &&
                 init_tile<Tiles::River>(6, Tile::URDL) &&
                 init_tile<Tiles::River>(7, Tile::RD) &&
                 init_tile<Tiles::River>(8, Tile::DL) &&

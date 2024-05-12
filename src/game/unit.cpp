@@ -13,12 +13,16 @@
 
 Unit::Unit(const Team &team, const Stats &stats, const std::source_location &location)
     : id{getClassName(location)},
-      sprite{"units/" + id + "/" + std::to_string(team) + "/idle/", "resources/images/"},
-      stats{stats}, team{team}, movement_manager{*this}, health_text{"", font_resources.get("arial.ttf")}
+      stats{stats}, team{team}, movement_manager{*this}, health_text{image_resources.get("numbers/1.png")}
 {
-    actions[Wait]   = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target){this->executeWaitAction(map, me, new_position, target);};
-    actions[Attack] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target){this->executeAttackAction(map, me, new_position, target);};
-    actions[Load] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target){this->executeLoadAction(map, me, new_position, target);};
+    actions[Wait] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)
+    { this->executeWaitAction(map, me, new_position, target); };
+    actions[Attack] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)
+    { this->executeAttackAction(map, me, new_position, target); };
+    actions[Load] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)
+    { this->executeLoadAction(map, me, new_position, target); };
+
+    health_text.setOrigin(health_text.getTexture()->getSize().x, health_text.getTexture()->getSize().y);
 }
 
 void Unit::displayPath(sf::RenderWindow &window, Map &map)
@@ -33,17 +37,26 @@ void Unit::updateCursor(Map &map, const TileIndex &cursor)
 
 void Unit::display(sf::RenderWindow &window, const Map &map, const TileIndex &index)
 {
-    const auto offset = map.scale * 3.0;
+    movement_manager.draw(window, map, index);
 
+    if (movement_manager.isMoving())
+        return;
+    if (getUnitCount() == 10)
+        return;
+
+    const auto offset = map.scale * 3.0;
     const auto [x, y] = movement_manager.getCurrentPosition(map, index);
 
-    sprite.setColor(status.finished ? sf::Color(100, 100, 100) : sf::Color::White);
-    sprite.display(window, x, y - offset, map.scale);
+    health_text.setPosition(x + 16 * map.scale, y + 16 * map.scale - offset);
+    const auto size = health_text.getTexture()->getSize();
+    health_text.setScale(8 * map.scale / size.x, 8 * map.scale / size.y);
+    health_text.setTexture(image_resources.get("numbers/" + std::to_string(getUnitCount()) + ".png"));
+    window.draw(health_text);
+}
 
-    health_text.setPosition(x, y - offset);
-    health_text.setString(std::to_string(getUnitCount()));
-    if (getUnitCount() != 10)
-        window.draw(health_text);
+void Unit::heal(const unsigned &amount)
+{
+    health += amount;
 }
 
 std::shared_ptr<Unit> Unit::createUnit(const std::string &id, const Team &team)
@@ -88,7 +101,7 @@ void Unit::move(Map &map, const TileIndex &from, const TileIndex &to)
     onMoved();
 }
 
-void Unit::executeAction(const ActionId& action, Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)
+void Unit::executeAction(const ActionId &action, Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)
 {
     assert(actions[action] != nullptr);
     actions[action](map, me, new_position, target);
@@ -110,12 +123,19 @@ void Unit::executeAttackAction(Map &map, const TileIndex &me, const TileIndex &n
 {
     move(map, me, new_position);
 
-    const auto result = AttackSimulator::attack(map, new_position, target);
-    if (result.attacker_died)
-        map.killUnit(map[new_position]);
+    if (map[target].unit)
+    {
+        const auto result = AttackSimulator::attack(map, new_position, target);
+        if (result.attacker_died)
+            map.killUnit(map[new_position]);
 
-    if (result.defender_died)
-        map.killUnit(map[target]);
+        if (result.defender_died)
+            map.killUnit(map[target]);
+    }
+    else
+    {
+        map[target].attack(map, new_position, target);
+    }
 
     endTurn(map);
     map.clearTileEffects();
@@ -156,8 +176,8 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
 
                     map.select_function = [this, &map, target, me](const TileIndex &unit_to_attack)
                     {
-                        executeAttackAction(map, me, target, unit_to_attack);
                         map.game.sendAction(Attack, movement_manager.getPath(), unit_to_attack);
+                        executeAttackAction(map, me, target, unit_to_attack);
                     };
                 };
             }
@@ -219,11 +239,11 @@ unsigned Unit::getUnitCount() const
     return (health + 9) / 10;
 }
 
-void Unit::endTurn(Map &map, const bool& set_finished)
+void Unit::endTurn(Map &map, const bool &set_finished)
 {
     movement_manager.stop();
     map.selected_unit = {};
     map.mode = View;
-    if(set_finished)
+    if (set_finished)
         setFinished();
 }

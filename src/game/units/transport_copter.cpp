@@ -22,7 +22,7 @@ namespace Units
             return unit.id == "Infantry" || unit.id == "Mech";
         }
 
-        virtual void executeUnitInteraction(Map &map, const TileIndex &unit, const TileIndex &me) override
+        virtual void executeUnitInteraction(Map &map, const TileIndex &unit, const TileIndex &) override
         {
             assert(!loaded_unit); // should be disallowd by allowUnitInteraction
             loaded_unit = map[unit].unit;

@@ -26,13 +26,14 @@ public:
           tiles{initTiles(data_string)}, width{(unsigned)tiles[0].size()}, height{(unsigned)tiles.size()}
     {
         (*this)[4, 4].unit = Unit::createUnit("Infantry", Team::Blue);
-        (*this)[5, 4].unit = Unit::createUnit("TransportCopter", Team::Red);
-        (*this)[6, 4].unit = Unit::createUnit("Infantry", Team::Red);;
+        // (*this)[5, 4].unit = Unit::createUnit("TransportCopter", Team::Red);
+        (*this)[6, 4].unit = Unit::createUnit("Infantry", Team::Red);
+        (*this)[6, 4].unit->heal(-80);
     }
 
     std::vector<std::vector<unsigned>> getTileIds(const std::string &data_string);
 
-    std::vector<std::vector<Tile>> initTiles(const std::string &data_string);
+    std::vector<std::vector<std::unique_ptr<Tile>>> initTiles(const std::string &data_string);
 
     std::vector<unsigned> getLineData(const std::string_view &line);
 
@@ -65,13 +66,7 @@ public:
         return ret;
     }
 
-    void endTurn()
-    {
-        for (unsigned y{0}; y < height; y++)
-            for (unsigned x{0}; x < width; x++)
-                if (tiles[y][x].unit)
-                    tiles[y][x].unit->startRound(*this, {x,y});
-    }
+    void endTurn();
 
     void handleMenu();
 
@@ -79,8 +74,11 @@ public:
     {
         for (unsigned y{0}; y < height; y++)
             for (unsigned x{0}; x < width; x++)
-                if (tiles[y][x].unit)
-                    tiles[y][x].unit->startRound(*this, {x, y});
+            {
+                (*this)[{x,y}].startRound(*this, {x, y});
+                if ((*this)[{x,y}].unit)
+                    (*this)[{x,y}].unit->startRound(*this, {x, y});
+            }
                 
     }
 
@@ -93,11 +91,11 @@ public:
     {
         for (unsigned y{0}; y < height; y++)
             for (unsigned x{0}; x < width; x++)
-                tiles[y][x].display(window, *this, {x, y});
+                (*this)[{x,y}].display(window, *this, {x, y});
 
         for (unsigned y{0}; y < height; y++)
             for (unsigned x{0}; x < width; x++)
-                tiles[y][x].displayUnit(window, *this, {x, y});
+                (*this)[{x,y}].displayUnit(window, *this, {x, y});
     }
 
     void moveCursorInDirection(unsigned &cursor_var, const int delta, float &time_since_movement, const unsigned &max_value)
@@ -177,7 +175,7 @@ public:
     {
         for (unsigned y{0}; y < tiles.size(); y++)
             for (unsigned x{0}; x < tiles[y].size(); x++)
-                tiles[y][x].setDisplayMode(Tile::DisplayMode::Normal);
+                (*this)[{x,y}].setDisplayMode(Tile::DisplayMode::Normal);
     }
 
     void setMovementTileMode(const std::vector<TileIndex> &indices, const Tile::DisplayMode &mode)
@@ -193,17 +191,22 @@ public:
 
     Tile &operator[](const TileIndex &index)
     {
-        return tiles[index.y][index.x];
+        return *tiles[index.y][index.x];
     }
 
     Tile &operator[](const unsigned &x, const unsigned &y)
     {
-        return tiles[y][x];
+        return *tiles[y][x];
+    }
+
+    unsigned getMoneyAmount()
+    {
+        return 0;
     }
 
     Game& game;
     sf::Sprite cursor_sprite;
-    std::vector<std::vector<Tile>> tiles{};
+    std::vector<std::vector<std::unique_ptr<Tile>>> tiles{};
     unsigned width, height;
     Team team{Red};
     // float pos_x, pos_y;

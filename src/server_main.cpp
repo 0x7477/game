@@ -3,9 +3,9 @@
 
 #include <network/network_manager.hpp>
 
-int main(int argc, char **argv)
+int main(int, char **)
 {
-    network::Server server{"0.0.0.0", 2000};
+    network::Server server{"0.0.0.0", 2001};
     network::NetworkManager manager{server};
 
     server.start();

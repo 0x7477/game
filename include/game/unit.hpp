@@ -64,8 +64,7 @@ public:
 
     virtual void onMoved(){};
 
-    virtual void startRound(const Map &map, const TileIndex &index) {
-        setFinished(false);
+    virtual void startRound(const Map &, const TileIndex &) {
     };
 
     template <typename T>
@@ -105,19 +104,21 @@ public:
     void move(Map &map, const TileIndex &from, const TileIndex &to);
     void displayMovementTiles(Map &map, const TileIndex &index);
 
+    void heal(const unsigned& amount);
+
     MovementType getMovementType() const { return stats.movement_type; }
     unsigned getMovementSpeed() const { return stats.movement_speed; }
 
-    virtual bool allowUnitInteraction(const Unit &unit)
+    virtual bool allowUnitInteraction(const Unit &)
     {
         return false;
     }
 
-    virtual std::vector<Action> getUnitInteractionOption(Map &map, const TileIndex &unit, const TileIndex &me) { return {}; }; // TODO ADD JOIN HERE
+    virtual std::vector<Action> getUnitInteractionOption(Map &, const TileIndex &, const TileIndex &) { return {}; }; // TODO ADD JOIN HERE
 
-    virtual void executeUnitInteraction(Map &map, const TileIndex &unit, const TileIndex &me) {}
+    virtual void executeUnitInteraction(Map &, const TileIndex &, const TileIndex &) {}
 
-    virtual std::vector<Action> handlePossibleActions(Map &map, const TileIndex &me, const TileIndex &target) { return {}; }
+    virtual std::vector<Action> handlePossibleActions(Map &, const TileIndex &, const TileIndex &) { return {}; }
 
     Team getTeam() const { return team; }
 
@@ -128,7 +129,6 @@ public:
 
     void updateCursor(Map &map, const TileIndex &cursor);
     std::string id;
-    UI::GIF sprite;
     constexpr static int max_health{100};
     int health{max_health};
     unsigned ammo{0};
@@ -138,16 +138,16 @@ public:
 
 protected:
     Stats stats;
-    Status status;
     Team team{Team::Red};
 
     std::array<UnitActionFunction, ActionIdCount> actions{nullptr};
 
 public:
+    Status status;
     MovementManager movement_manager;
 
 protected:
-    sf::Text health_text;
+    sf::Sprite health_text;
 };
 
 template <typename T>

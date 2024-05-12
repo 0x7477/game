@@ -3,7 +3,7 @@
 #include <iostream>
 #include "wave_function_collapse/rule_generator.hpp"
 #include <game/map.hpp>
-int main(int argc, char **argv)
+int main(int, char **)
 {
         // wfc::RuleGenerator rule_generator{"images/cats.png",3};
         // wfc::RuleGenerator rule_generator{"images/water.png", 3};

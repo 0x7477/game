@@ -29,6 +29,13 @@ void Tile::displayUnit(sf::RenderWindow &window, const Map &map, const TileIndex
         unit->display(window, map, index);
 }
 
+void RepairUnits::handleStartOfTurn(Map& map, const TileIndex &tile_index)
+{
+    if(!map[tile_index].unit)
+        return;
+    map[tile_index].unit->heal(20);   
+}
+
 bool ProduceUnit::interact(Map &map, const TileIndex &tile_index) const
 {
     const auto &tile = map[tile_index];

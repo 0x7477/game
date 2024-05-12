@@ -18,7 +18,7 @@ namespace UI
         struct AnimationInfo
         {
             AnimationInfo(const std::string &path, const std::string &root_path)
-                : spritesheet{image_resources.get(path + "sprite_sheet.png")},
+                : spritesheet{image_resources.get(path + "spritesheet.png")},
                   timings{getOffsets(root_path + path + "timing.txt")},
                   offsets{getOffsets(root_path + path + "width.txt")},
                   number_of_images{(unsigned)timings.size()},

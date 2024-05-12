@@ -5,7 +5,7 @@ namespace Tiles
     struct Road : Tile
     {
         Road()
-            : Tile({0, {1, 1, 1, 0, 0, 1, 0}})
+            : Tile({0, MovementCosts{{1, 1, 1, 1, 0,0, 1, 0}}})
         {
         }
     };

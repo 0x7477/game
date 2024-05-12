@@ -2,8 +2,8 @@
 
 network::NetworkInterface::NetworkInterface(){};
 
-void network::NetworkInterface::send(const std::string_view &data){};
-void network::NetworkInterface::send(const std::string_view &message, uv_stream_t *client){};
+void network::NetworkInterface::send(const std::string_view &){}
+void network::NetworkInterface::sendTo(const std::string_view &, uv_stream_t *){}
 
 void network::NetworkInterface::setCallbackReceive(std::function<void(const std::string_view &, uv_stream_t *)> callback)
 {

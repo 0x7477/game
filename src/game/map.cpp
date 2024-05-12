@@ -1,9 +1,16 @@
 #include <game/map.hpp>
+#include <game/game.hpp>
 
 template <>
 void Map::displayMode<ViewMode::Shopping>(sf::RenderWindow &window)
 {
     shopping_menu.draw(window);
+}
+
+template <>
+void Map::displayMode<ViewMode::Watch>(sf::RenderWindow &window)
+{
+    drawMap(window);
 }
 
 template <>
@@ -15,7 +22,7 @@ void Map::displayMode<ViewMode::View>(sf::RenderWindow &window)
 
     if (selected_unit)
         getTile(*selected_unit).unit->displayPath(window, *this);
-    
+
     drawCursor(window);
 }
 template <>
@@ -49,19 +56,21 @@ void Map::displayMode<ViewMode::SelectAction>(sf::RenderWindow &window)
 
 void Map::display(sf::RenderWindow &window)
 {
-    if (mode == View)
+    if (game.current_active_player != team)
+        displayMode<Watch>(window);
+    else if (mode == View)
         displayMode<View>(window);
 
-    if (mode == Shopping)
+    else if (mode == Shopping)
         displayMode<Shopping>(window);
 
     // if (mode == UnitAction)
     //     displayMode<UnitAction>(window);
 
-    if (mode == SelectAction)
+    else if (mode == SelectAction)
         displayMode<SelectAction>(window);
 
-    if (mode == SelectTarget)
+    else if (mode == SelectTarget)
         displayMode<SelectTarget>(window);
 }
 
@@ -94,21 +103,21 @@ std::vector<std::vector<unsigned>> Map::getTileIds(const std::string &data_strin
     return tile_ids;
 }
 
-std::vector<std::vector<Tile>> Map::initTiles(const std::string &data_string)
+std::vector<std::vector<std::unique_ptr<Tile>>> Map::initTiles(const std::string &data_string)
 {
     const auto tile_ids = getTileIds(data_string);
-    std::vector<std::vector<Tile>> ret{};
+    std::vector<std::vector<std::unique_ptr<Tile>>> ret{};
 
     ret.reserve(tile_ids.size());
     for (auto y{0u}; y < tile_ids.size(); y++)
     {
         const auto &tile_id_row = tile_ids[y];
-        std::vector<Tile> tile_row;
+        std::vector<std::unique_ptr<Tile>> tile_row;
         tile_row.reserve(tile_id_row.size());
         for (auto x{0u}; x < tile_id_row.size(); x++)
             tile_row.push_back(Tile::createTile(tile_ids[y][x]));
 
-        ret.push_back(tile_row);
+        ret.push_back(std::move(tile_row));
     }
 
     return ret;
@@ -150,7 +159,7 @@ void Map::handleMenu()
     options.push_back("End Turn");
     actions["End Turn"] = [this]()
     {
-        endTurn();
+        game.endTurn();
         mode = View;
     };
     auto execute_action = [this, options, actions](const std::size_t &index) mutable
@@ -178,12 +187,12 @@ void Map::handleEvents()
         {
             if (!tile.unit)
             {
-                if(!tile.interact(cursor, *this))
+                if (!tile.interact(*this, cursor))
                     handleMenu();
             }
             else if (tile.unit->getTeam() == team)
             {
-                if(!tile.unit->select(*this, cursor))
+                if (!tile.unit->select(*this, cursor))
                     handleMenu();
             }
         }
@@ -204,4 +213,12 @@ void Map::handleEvents()
         clearTileEffects();
         selected_unit = {};
     }
+}
+
+void Map::endTurn()
+{
+    for (unsigned y{0}; y < height; y++)
+        for (unsigned x{0}; x < width; x++)
+            if ((*this)[{x, y}].unit)
+                (*this)[{x, y}].unit->setFinished(false);
 }

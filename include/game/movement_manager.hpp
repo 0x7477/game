@@ -6,7 +6,7 @@
 #include <functional>
 #include <optional>
 #include <SFML/Graphics.hpp>
-
+#include <ui/gif.hpp>
 class Map;
 class Unit;
 
@@ -23,7 +23,10 @@ public:
 
     bool isMoving() const;
 
+    void draw(sf::RenderWindow &window, const Map &map, const TileIndex &index);
     void stop();
+
+
 
     std::tuple<float, float> getCurrentPosition(const Map& map, const TileIndex& pos);
 
@@ -49,5 +52,7 @@ private:
     float seconds_per_tile{0.2};
     float time_passed{0};
     DeltaTimer delta_time;
+    UI::GIF idle, up, down, left, right;
+    UI::GIF* current_animation{&idle};
     std::optional<std::function<void()>> on_animation_finished;
 };

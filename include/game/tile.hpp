@@ -16,12 +16,18 @@ class Tile;
 
 struct TileUnitInteraction
 {
-    virtual void interact(Map &map, const TileIndex &tile) const {}
+    virtual void interact(Map &, const TileIndex &) const {}
+};
+
+struct TileAttackInteraction
+{
+    virtual bool isAttackable(Map &, const TileIndex &, const Unit &) const { return false; }
+    virtual void attack(Map &, const TileIndex &, const TileIndex &) const {}
 };
 
 struct TilePlayerInteraction
 {
-    virtual bool interact(Map &map, const TileIndex &tile) const {return false;}
+    virtual bool interact(Map &, const TileIndex &) const { return false; }
 };
 
 struct NoTilePlayerInteraction : public TilePlayerInteraction
@@ -30,21 +36,26 @@ struct NoTilePlayerInteraction : public TilePlayerInteraction
 
 struct ProduceUnit : public TilePlayerInteraction
 {
-    ProduceUnit(const std::vector<std::string>& factory_produced_units)
-    :factory_produced_units{factory_produced_units}{}
+    ProduceUnit(const std::vector<std::string> &factory_produced_units)
+        : factory_produced_units{factory_produced_units} {}
 
     virtual bool interact(Map &map, const TileIndex &tile_index) const override;
 
     std::vector<std::string> factory_produced_units;
 };
 
-
-static NoTilePlayerInteraction default_tile_interaction;
-
-class TileRoundBehaviour
+struct TileRoundBehaviour
 {
-    virtual void handleEndOfTurn();
-    virtual void handleStartOfTurn();
+    virtual void handleEndOfTurn(Map& , const TileIndex &){};
+    virtual void handleStartOfTurn(Map&, const TileIndex &){};
+};
+static NoTilePlayerInteraction default_tile_interaction;
+static TileAttackInteraction default_tile_attack_interaction;
+static TileRoundBehaviour default_tile_round_behaviour;
+
+struct RepairUnits : TileRoundBehaviour
+{
+    virtual void handleStartOfTurn(Map& map, const TileIndex &tile_index);
 };
 
 class Tile
@@ -59,7 +70,21 @@ public:
 
     enum Direction
     {
-        URDL, V, H, U,UR, R, RD, D, DL, L, LU, URD, RDL, DLU, LUR
+        URDL,
+        V,
+        H,
+        U,
+        UR,
+        R,
+        RD,
+        D,
+        DL,
+        L,
+        LU,
+        URD,
+        RDL,
+        DLU,
+        LUR
     };
 
     struct TileInfo
@@ -67,6 +92,8 @@ public:
         unsigned defense;
         MovementCosts movement_costs;
         TilePlayerInteraction &player_interaction = default_tile_interaction;
+        TileAttackInteraction &tile_attack_interaction = default_tile_attack_interaction;
+        TileRoundBehaviour& tile_round_behaviour = default_tile_round_behaviour;
     };
 
     static std::string getClassName(const std::source_location &location = std::source_location::current())
@@ -81,14 +108,12 @@ public:
         return function_name.substr(start, end - start);
     }
 
-
     Tile(const TileInfo &info, const std::source_location &location = std::source_location::current())
-        : id{getClassName(location)}, info{info}, sprite{"tiles/" + id + "/" + std::to_string(team)+  "/", "resources/images/"},
-        movement_effect{"misc/movement_tile/", "resources/images/"},
-        attack_effect{"misc/attack_tile/", "resources/images/"}
+        : id{getClassName(location)}, info{info}, sprite{"tiles/" + id + "/" + std::to_string(team) + "/", "resources/images/"},
+          movement_effect{"misc/movement/", "resources/images/"},
+          attack_effect{"misc/attack_tile/", "resources/images/"}
     {
     }
-
 
     void display(sf::RenderWindow &window, const Map &map, const TileIndex &index);
     void displayUnit(sf::RenderWindow &window, const Map &map, const TileIndex &index);
@@ -98,40 +123,50 @@ public:
         display_mode = new_display_mode;
     }
 
-    bool interact(const TileIndex &tile, Map &map)
+    bool interact(Map &map, const TileIndex &tile)
     {
         return info.player_interaction.interact(map, tile);
     }
 
+    void attack(Map &map, const TileIndex &unit, const TileIndex &tile)
+    {
+        return info.tile_attack_interaction.attack(map, unit, tile);
+    }
+
+    bool isAttackable(Map &map, const TileIndex &tile, const Unit &unit)
+    {
+        return info.tile_attack_interaction.isAttackable(map, tile, unit);
+    }
 
     template <typename T>
     static void registerClass(const unsigned &id)
     {
-        library[id] = [=]() -> T
-        { return T{}; };
+        library[id] = [=]()
+        { return std::make_unique<T>(); };
     }
 
     template <typename T>
     static void registerClass(const unsigned &id, const Team &team)
     {
-        library[id] = [team]() -> T
-        { T t{};
-          t.setTeam(team);
+        library[id] = [team]() -> std::unique_ptr<T>
+        { std::unique_ptr<T> t{std::make_unique<T>()};
+          t->setTeam(team);
         return t; };
     }
 
     template <typename T>
     static void registerClass(const unsigned &id, const Direction &direction)
     {
-        library[id] = [direction]() -> T
-        { T t{};
-            t.setDirection(direction);
+        library[id] = [direction]() -> std::unique_ptr<T>
+        { std::unique_ptr<T> t{std::make_unique<T>()};
+          t->setDirection(direction);
         return t; };
     }
 
-    void setDirection(const Direction& direction)
+    void setDirection(const Direction &direction_)
     {
-        sprite = UI::GIF("tiles/" + id + "/"  + std::to_string(direction) + "/", "resources/images/");
+        direction = direction_;
+        sprite = UI::GIF("tiles/" + id + "/" + std::to_string(direction) + "/", "resources/images/");
     }
 
     unsigned getDefense() const
@@ -149,14 +184,21 @@ public:
         return id;
     }
 
+    
+    void startRound(Map& map, const TileIndex& index)
+    {
+        info.tile_round_behaviour.handleStartOfTurn(map, index);
+    }
+
+
     void setTeam(const Team &new_team)
     {
         team = new_team;
-        sprite = UI::GIF("tiles/" + id + "/" + std::to_string(team)+  "/", "resources/images/");
+        sprite = UI::GIF("tiles/" + id + "/" + std::to_string(team) + "/", "resources/images/");
     }
-    static Tile createTile(unsigned id)
+    static std::unique_ptr<Tile> createTile(unsigned id)
     {
-        if(!library.contains(id))
+        if (!library.contains(id))
             std::cout << "missing id " << id << "\n";
         assert(library.contains(id));
         return library[id]();
@@ -166,22 +208,22 @@ public:
 
 protected:
     std::string id;
-    TileInfo info;
     DisplayMode display_mode{Normal};
     // TileUnitInteraction &unit_interaction;
     // TileRoundBehaviour &round_behaviour;
 
-
 public:
+    TileInfo info;
     Team team{Neutral};
     UI::GIF sprite;
     UI::GIF movement_effect;
     UI::GIF attack_effect;
+    Direction direction{URDL};
     // UI::GIF attack_effect;
     // const TilePlayerInteraction &player_interaction;
 
 private:
-    static inline std::map<unsigned, std::function<Tile()>> library;
+    static inline std::map<unsigned, std::function<std::unique_ptr<Tile>()>> library;
 };
 
 template <typename T>
@@ -199,7 +241,7 @@ static bool init_tile(const unsigned &id, const Team &team)
 }
 
 template <typename T>
-static bool init_tile(const unsigned &id, const Tile::Direction& direction)
+static bool init_tile(const unsigned &id, const Tile::Direction &direction)
 {
     Tile::registerClass<T>(id, direction);
     return true;

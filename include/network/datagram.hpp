@@ -162,7 +162,7 @@ namespace network
 
         template <std::size_t I = 0>
         constexpr inline typename std::enable_if<I == sizeof...(Args), void>::type
-        deserialize(std::string_view &buffer) {}
+        deserialize(std::string_view &) {}
 
         template <std::size_t I = 0>
         constexpr inline typename std::enable_if < I<sizeof...(Args), void>::type
@@ -174,7 +174,7 @@ namespace network
 
         template <std::size_t I = 0>
         inline typename std::enable_if<I == sizeof...(Args), void>::type
-        constexpr serialize(std::vector<char> &buffer) const {}
+        constexpr serialize(std::vector<char> &) const {}
 
         template <std::size_t I = 0>
         constexpr inline typename std::enable_if < I<sizeof...(Args), void>::type

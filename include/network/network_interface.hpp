@@ -11,7 +11,7 @@ namespace network
         NetworkInterface();
 
         virtual void send(const std::string_view &data);
-        virtual void send(const std::string_view &message, uv_stream_t *client);
+        virtual void sendTo(const std::string_view &message, uv_stream_t *client);
 
         void setCallbackReceive(std::function<void(const std::string_view &, uv_stream_t *)> callback);
         void setCallbackConnected(std::function<void()> callback);

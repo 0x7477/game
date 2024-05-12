@@ -53,7 +53,7 @@ namespace network
     class RPC : public RPCBase
     {
     public:
-        constexpr RPC(const std::source_location location = std::source_location::current())
+        constexpr RPC()
         {
             rpcs[getID()] = this;
 

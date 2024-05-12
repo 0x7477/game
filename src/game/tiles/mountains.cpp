@@ -5,7 +5,7 @@ namespace Tiles
     struct Mountains : Tile
     {
         Mountains()
-            : Tile({4, {2, 1, 0, 0, 0, 0, 1, 0}})
+            : Tile({4, MovementCosts{{2, 1, 0, 0, 0, 0, 1, 0}}})
         {
         }
     };

@@ -14,8 +14,10 @@ namespace network
         void start();
         static void receivePacket(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf);
         void onConnection(uv_stream_t *server);
-        void send(const std::string_view &message, uv_stream_t *client) override;
         void runEventLoop();
+
+        void sendTo(const std::string_view &message, uv_stream_t *client) override;
+
 
     private:
         std::map<uv_stream_t *, std::string> overhead_buffer;

@@ -16,10 +16,12 @@ namespace network
         Client(const std::string &ip, const unsigned int &port);
 
         void connect();
-        void send(const std::string_view &message) override;
-        void send(const std::string_view &message, uv_stream_t *client) override;
+
         void startReceiving();
         void runEventLoop();
+
+        void send(const std::string_view &message) override;
+        void sendTo(const std::string_view &message, uv_stream_t *) override;
 
     private:
         void reconnect();
