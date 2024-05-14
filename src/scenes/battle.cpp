@@ -3,7 +3,7 @@
 #include <game/unit.hpp>
 
 Scene::Battle::Battle(WindowManager &window_manager, network::NetworkManager &network_manager, const std::string &map_data)
-    : Scene{"map", window_manager}, network_manager{network_manager}, game{network_manager, map_data}
+    : Scene{"map", window_manager}, network_manager{network_manager}, game{network_manager, map_data, *this}
 {
     battle_scene = this;
 }

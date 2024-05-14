@@ -11,9 +11,9 @@ void unit_action(const network::Datagram<Unit::ActionId, std::vector<TileIndex>,
     const auto path = std::get<1>(data.getData());
     const auto target = std::get<2>(data.getData());
 
-    for (const auto &tile : path)
-        std::cout << tile << ",";
-    std::cout << "\n";
+    // for (const auto &tile : path)
+    //     std::cout << tile << ",";
+    // std::cout << "\n";
     
     const auto path_start = *path.begin();
     const auto path_end = *(path.end() - 1);
@@ -34,6 +34,7 @@ void create_unit(const network::Datagram<std::string, Team, TileIndex> &data)
 
     Game::game->map.createUnit(unit_id, team, target);
     Game::game->map[target].unit->setFinished();
+    Game::game->players[team].money -= Unit::unit_costs[unit_id];
 }
 network::RPC<network::Datagram<std::string, Team, TileIndex>, create_unit> create_unit_rpc;
 
@@ -51,6 +52,9 @@ void end_turn(const network::Datagram<> &)
 {
     Game::game->current_active_player = Game::game->current_active_player == Red ? Blue : Red;
     Game::game->map.endTurn();
+
+    Game::game->map.beginTurn(Game::game->current_active_player);
+
 }
 network::RPC<network::Datagram<>, end_turn> end_turn_rpc;
 

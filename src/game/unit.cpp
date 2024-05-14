@@ -21,6 +21,8 @@ Unit::Unit(const Team &team, const Stats &stats, const std::source_location &loc
     { this->executeAttackAction(map, me, new_position, target); };
     actions[Load] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)
     { this->executeLoadAction(map, me, new_position, target); };
+    actions[Join] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)
+    { this->executeJoinAction(map, me, new_position, target); };
 
     health_text.setOrigin(health_text.getTexture()->getSize().x, health_text.getTexture()->getSize().y);
 }
@@ -53,6 +55,12 @@ void Unit::display(sf::RenderWindow &window, const Map &map, const TileIndex &in
     health_text.setTexture(image_resources.get("numbers/" + std::to_string(getUnitCount()) + ".png"));
     window.draw(health_text);
 }
+
+unsigned Unit::getCosts()
+{
+    return unit_costs[id];   
+}
+
 
 void Unit::heal(const unsigned &amount)
 {
@@ -91,6 +99,7 @@ void Unit::move(Map &map, const TileIndex &from, const TileIndex &to)
 
     if (target_tile.unit)
     {
+        std::cout << "executeUnitInteraction\n";
         target_tile.unit->executeUnitInteraction(map, from, to);
     }
     else
@@ -127,10 +136,10 @@ void Unit::executeAttackAction(Map &map, const TileIndex &me, const TileIndex &n
     {
         const auto result = AttackSimulator::attack(map, new_position, target);
         if (result.attacker_died)
-            map.killUnit(map[new_position]);
+            map.killUnit(new_position);
 
         if (result.defender_died)
-            map.killUnit(map[target]);
+            map.killUnit(target);
     }
     else
     {
@@ -230,6 +239,34 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
     movement_manager.startAnimation(on_movement_finished);
     map.mode = SelectAction;
     map.action_menu.clearOptions();
+}
+
+void Unit::executeJoinAction(Map &map, const TileIndex &from, const TileIndex &to, const TileIndex &)
+{
+    const auto health = 10 * map[from].unit->getUnitCount();
+    map[to].unit->heal(health);
+    map[to].unit->setFinished();
+    map[from].unit = nullptr;
+    endTurn(map);
+}
+
+
+std::optional<Unit::Action> Unit::getJoinAction(Map &map,const TileIndex &me, const TileIndex &target)
+{
+    if(me == target)
+        return{};
+    if(!map[target].unit)
+        return{};
+    if(map[target].unit->getUnitCount() == 10)
+        return{};
+
+    return Action{.name = "Join", .execute = [&map, me, target, this]()
+    {
+        std::cout << "movement_manager.getPath()" << "\n";
+        std::cout  << movement_manager.getPath().size() << "\n";
+        map.game.sendAction(Join, map[me].unit->movement_manager.getPath(), target);
+        executeJoinAction(map, me, target, target);
+    }};
 }
 
 unsigned Unit::getUnitCount() const

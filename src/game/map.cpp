@@ -1,5 +1,6 @@
 #include <game/map.hpp>
 #include <game/game.hpp>
+#include <scenes/battle.hpp>
 
 template <>
 void Map::displayMode<ViewMode::Shopping>(sf::RenderWindow &window)
@@ -54,9 +55,18 @@ void Map::displayMode<ViewMode::SelectAction>(sf::RenderWindow &window)
     action_menu.draw(window);
 }
 
+template <>
+void Map::displayMode<ViewMode::Result>(sf::RenderWindow &window)
+{
+    drawMap(window);
+    endcard.draw(window);
+}
+
 void Map::display(sf::RenderWindow &window)
 {
-    if (game.current_active_player != team)
+    if (winner != Neutral)
+        displayMode<Result>(window);
+    else if (game.current_active_player != team)
         displayMode<Watch>(window);
     else if (mode == View)
         displayMode<View>(window);
@@ -72,6 +82,13 @@ void Map::display(sf::RenderWindow &window)
 
     else if (mode == SelectTarget)
         displayMode<SelectTarget>(window);
+}
+
+
+void Map::win(const Team& winner_team)
+{
+    endcard.setResult(winner_team == team, [this](){game.battle_scene.setScene("menu");}); 
+    winner = winner_team;
 }
 
 void Map::drawCursor(sf::RenderWindow &window)

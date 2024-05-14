@@ -6,11 +6,16 @@
 #include <game/lobby.hpp>
 #include <map>
 
+namespace Scene
+{
+    class Battle;
+}
+
 class Game
 {
 public:
-    Game(network::NetworkManager &network_manager, const std::string &map_data)
-        : network_manager{network_manager}, map{*this, map_data}
+    Game(network::NetworkManager &network_manager, const std::string &map_data, Scene::Battle& battle_scene)
+        : network_manager{network_manager}, map{*this, map_data}, battle_scene{battle_scene}
     {
         game = this;
     }
@@ -30,6 +35,8 @@ public:
     std::map<Team, Player> players{};
     Map map;
     Team current_active_player{Red};
+    Scene::Battle& battle_scene;
 
     static Game *game;
+
 };

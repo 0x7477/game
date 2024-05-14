@@ -24,7 +24,10 @@ namespace Units
             capture_progress += getUnitCount();
 
             if (capture_progress >= 20)
+            {
                 map[target].setTeam(team);
+                map.win(team);
+            }
 
             endTurn(map);
         }

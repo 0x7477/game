@@ -2,5 +2,5 @@
 
 enum ViewMode
 {
-    Watch, View, Shopping, SelectAction, SelectTarget
+    Watch, Result, View, Shopping, SelectAction, SelectTarget
 };

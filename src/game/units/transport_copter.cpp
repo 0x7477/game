@@ -22,8 +22,14 @@ namespace Units
             return unit.id == "Infantry" || unit.id == "Mech";
         }
 
-        virtual void executeUnitInteraction(Map &map, const TileIndex &unit, const TileIndex &) override
+        virtual void executeUnitInteraction(Map &map, const TileIndex &unit, const TileIndex &me) override
         {
+            if(map[unit].unit->id == id)
+            {
+                executeJoinAction(map, unit, me, me);
+                return;
+            }
+
             assert(!loaded_unit); // should be disallowd by allowUnitInteraction
             loaded_unit = map[unit].unit;
             map[unit].unit = nullptr;
@@ -84,21 +90,9 @@ namespace Units
                                                        //    loaded_unit->endTurn(map);
                                                    }});
 
-            if (unit_id == id && health < max_health)
-            {
-                const auto has_other_helicopter_unit_loaded = ((TransportCopter *)map[unit].unit.get())->loaded_unit;
-
-                if (!has_other_helicopter_unit_loaded || !loaded_unit)
-                    actions.push_back({.name = "Join", .execute = [&map, this, unit]()
-                                                       {
-                                                           health += map[unit].unit->health;
-                                                           health = std::min(health, 100);
-
-                                                           // TODO add money
-                                                           map[unit].unit = nullptr;
-                                                           endTurn(map);
-                                                       }});
-            }
+            const auto possible_join_action = getJoinAction(map, unit, me);
+            if(possible_join_action)
+                actions.push_back(*possible_join_action);
 
             return actions;
         }

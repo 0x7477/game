@@ -4,6 +4,7 @@
 #include <SFML/Graphics.hpp>
 #include <helper/resource_loader.hpp>
 #include <functional>
+#include <optional>
 #include <cassert>
 #include <game/movement.hpp>
 #include <source_location>
@@ -53,6 +54,7 @@ public:
         Load,
         Capture,
         Fire,
+        Join,
         ActionIdCount
     };
 
@@ -61,6 +63,9 @@ public:
     void displayPath(sf::RenderWindow &window, Map &map);
     void display(sf::RenderWindow &window, const Map &map, const TileIndex &index);
 
+
+
+    std::optional<Action> getJoinAction(Map &map,const TileIndex &me, const TileIndex &target);
 
     virtual void onMoved(){};
 
@@ -97,6 +102,7 @@ public:
     void executeLoadAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target = {});
     void executeUnloadAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target = {});
     void executeAttackAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target);
+    void executeJoinAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target);
 
 
     bool select(Map &map, const TileIndex &index);
@@ -104,19 +110,31 @@ public:
     void move(Map &map, const TileIndex &from, const TileIndex &to);
     void displayMovementTiles(Map &map, const TileIndex &index);
 
+
+    unsigned getCosts();
     void heal(const unsigned& amount);
 
     MovementType getMovementType() const { return stats.movement_type; }
     unsigned getMovementSpeed() const { return stats.movement_speed; }
 
-    virtual bool allowUnitInteraction(const Unit &)
+    virtual bool allowUnitInteraction(const Unit &unit)
     {
+        if(getUnitCount() < 10 && id == unit.id)
+            return true;
         return false;
     }
 
-    virtual std::vector<Action> getUnitInteractionOption(Map &, const TileIndex &, const TileIndex &) { return {}; }; // TODO ADD JOIN HERE
+    virtual std::vector<Action> getUnitInteractionOption(Map & map, const TileIndex &me, const TileIndex &target) 
+    { 
+        const auto join_action_option = getJoinAction(map, me, target);
+        if(join_action_option)
+            return {*join_action_option};
+        return {}; }; // TODO ADD JOIN HERE
 
-    virtual void executeUnitInteraction(Map &, const TileIndex &, const TileIndex &) {}
+    virtual void executeUnitInteraction(Map &map, const TileIndex &from, const TileIndex &to) 
+    {
+        executeJoinAction(map, from, to,to);
+    }
 
     virtual std::vector<Action> handlePossibleActions(Map &, const TileIndex &, const TileIndex &) { return {}; }
 
@@ -146,8 +164,10 @@ public:
     Status status;
     MovementManager movement_manager;
 
+    static std::map<std::string, unsigned> unit_costs;
 protected:
     sf::Sprite health_text;
+
 };
 
 template <typename T>

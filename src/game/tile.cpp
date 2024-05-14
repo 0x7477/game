@@ -1,6 +1,7 @@
 #include <game/tile.hpp>
 #include <game/map.hpp>
 #include <game/game.hpp>
+#include <game/player.hpp>
 
 void Tile::display(sf::RenderWindow &window, const Map &map, const TileIndex &index)
 {
@@ -31,9 +32,31 @@ void Tile::displayUnit(sf::RenderWindow &window, const Map &map, const TileIndex
 
 void RepairUnits::handleStartOfTurn(Map& map, const TileIndex &tile_index)
 {
+    auto& money = map.game.players[map.team].money;
+    money += 1000;
     if(!map[tile_index].unit)
         return;
-    map[tile_index].unit->heal(20);   
+
+    const auto unit_costs = map[tile_index].unit->getCosts();
+
+    if(map[tile_index].unit->getUnitCount() == 10)
+        return; // dont need healing
+    
+    else if(map[tile_index].unit->getUnitCount() == 9 && money >= unit_costs / 10)
+    {
+        map[tile_index].unit->heal(10);
+        money -= unit_costs / 10; // just needs small healing
+    }
+    else if(money >= unit_costs / 5)
+    {
+        map[tile_index].unit->heal(20);   
+        money -= unit_costs / 5;// needs big healing
+    }
+    else if(money >= unit_costs / 10)
+    {
+        map[tile_index].unit->heal(10);   
+        money -= unit_costs / 10;// can just afford small healing
+    }
 }
 
 bool ProduceUnit::interact(Map &map, const TileIndex &tile_index) const
@@ -41,6 +64,8 @@ bool ProduceUnit::interact(Map &map, const TileIndex &tile_index) const
     const auto &tile = map[tile_index];
     if (map.team != tile.team)
         return false;
+
+    std::cout << "money" << map.game.players[map.team].money << "\n";
 
     map.shopping_menu.setOptions(factory_produced_units, [&](const std::size_t &index)
                                  {

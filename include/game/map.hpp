@@ -14,7 +14,7 @@
 #include <ui/action_menu.hpp>
 #include <game/visualization_mode.hpp>
 #include <game/tile_index.hpp>
-
+#include <ui/endcard.hpp>
 class Game;
 
 
@@ -29,6 +29,10 @@ public:
         // (*this)[5, 4].unit = Unit::createUnit("TransportCopter", Team::Red);
         (*this)[6, 4].unit = Unit::createUnit("Infantry", Team::Red);
         (*this)[6, 4].unit->heal(-80);
+
+        (*this)[7, 4].unit = Unit::createUnit("Infantry", Team::Red);
+        (*this)[7, 4].unit->heal(-80);
+
     }
 
     std::vector<std::vector<unsigned>> getTileIds(const std::string &data_string);
@@ -70,21 +74,19 @@ public:
 
     void handleMenu();
 
-    void beginTurn()
+    void beginTurn(const Team& team)
     {
         for (unsigned y{0}; y < height; y++)
             for (unsigned x{0}; x < width; x++)
             {
-                (*this)[{x,y}].startRound(*this, {x, y});
-                if ((*this)[{x,y}].unit)
-                    (*this)[{x,y}].unit->startRound(*this, {x, y});
+                auto& tile = (*this)[{x,y}];
+                if(tile.team == team)
+                    tile.startRound(*this, {x, y});
+
+                if (tile.unit)
+                    tile.unit->startRound(*this, {x, y});
             }
                 
-    }
-
-    void killUnit(Tile &tile)
-    {
-        tile.unit = nullptr;
     }
 
     void drawMap(sf::RenderWindow &window)
@@ -154,6 +156,30 @@ public:
             time_since_movement_button_was_pressed += delta_time;
     }
 
+    bool hasTeamNoUnitsLeft(const Team& team)
+    {
+        for (unsigned y{0}; y < tiles.size(); y++)
+            for (unsigned x{0}; x < tiles[y].size(); x++)
+                {
+                    const auto& tile = (*this)[{x,y}];
+                    if(tile.unit && tile.unit->getTeam() == team)
+                        return false;
+                }
+
+        return true;
+    }
+
+    void win(const Team& winner_team);
+
+    void killUnit(const TileIndex &position)
+    {
+        const auto team = (*this)[position].unit->getTeam();
+        (*this)[position].unit = nullptr;
+        if(hasTeamNoUnitsLeft(team))
+            win(team == Red ? Blue : Red);
+            
+    }
+
     std::shared_ptr<Unit> createUnit(const std::string &id, const Team &team_id, const TileIndex &position)
     {
         return createUnit(id, team_id, getTile(position));
@@ -209,6 +235,7 @@ public:
     std::vector<std::vector<std::unique_ptr<Tile>>> tiles{};
     unsigned width, height;
     Team team{Red};
+    Team winner{Neutral};
     // float pos_x, pos_y;
     TileIndex cursor{1, 1};
     std::optional<TileIndex> selected_unit{};
@@ -226,6 +253,7 @@ public:
 
     UI::ShoppingMenu shopping_menu{};
     UI::ActionMenu action_menu{};
+    UI::EndCard endcard;
     ViewMode mode{View};
     DeltaTimer delta_time{};
 };

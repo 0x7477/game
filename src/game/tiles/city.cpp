@@ -2,12 +2,15 @@
 #include <game/map.hpp>
 #include <game/game.hpp>
 
-
+namespace
+{
+    static RepairUnits repair_units{};
+}
 namespace Tiles
 {
     struct City : Tile
     {
-        City() : Tile(TileInfo{.defense = 3, .movement_costs = MovementCosts{{1, 1, 1, 1, 0, 1, 1, 0}}})
+        City() : Tile(TileInfo{.defense = 3, .movement_costs = MovementCosts{{1, 1, 1, 1, 0, 1, 1, 0}}, .tile_round_behaviour = repair_units})
         {
         }
     };
