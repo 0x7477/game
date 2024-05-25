@@ -30,32 +30,42 @@ void Tile::displayUnit(sf::RenderWindow &window, const Map &map, const TileIndex
         unit->display(window, map, index);
 }
 
-void RepairUnits::handleStartOfTurn(Map& map, const TileIndex &tile_index)
+void RepairUnits::handleStartOfTurn(Map &map, const TileIndex &tile_index)
 {
-    auto& money = map.game.players[map.team].money;
-    money += 1000;
-    if(!map[tile_index].unit)
+    if (map[tile_index].team != map.game.current_active_player)
         return;
 
-    const auto unit_costs = map[tile_index].unit->getCosts();
+    auto &money = map.game.players[map[tile_index].team].money;
+    money += 1000;
 
-    if(map[tile_index].unit->getUnitCount() == 10)
+    if (!map[tile_index].unit)
+        return;
+
+    auto& unit = *map[tile_index].unit;
+
+    if (unit.getTeam() != map[tile_index].team)
+        return;
+
+    unit.refuel();
+    const auto unit_costs = unit.getCosts();
+
+    if (unit.getUnitCount() == 10)
         return; // dont need healing
-    
-    else if(map[tile_index].unit->getUnitCount() == 9 && money >= unit_costs / 10)
+
+    else if (unit.getUnitCount() == 9 && money >= unit_costs / 10)
     {
-        map[tile_index].unit->heal(10);
+        unit.heal(10);
         money -= unit_costs / 10; // just needs small healing
     }
-    else if(money >= unit_costs / 5)
+    else if (money >= unit_costs / 5)
     {
-        map[tile_index].unit->heal(20);   
-        money -= unit_costs / 5;// needs big healing
+        unit.heal(20);
+        money -= unit_costs / 5; // needs big healing
     }
-    else if(money >= unit_costs / 10)
+    else if (money >= unit_costs / 10)
     {
-        map[tile_index].unit->heal(10);   
-        money -= unit_costs / 10;// can just afford small healing
+        unit.heal(10);
+        money -= unit_costs / 10; // can just afford small healing
     }
 }
 
@@ -65,9 +75,7 @@ bool ProduceUnit::interact(Map &map, const TileIndex &tile_index) const
     if (map.team != tile.team)
         return false;
 
-    std::cout << "money" << map.game.players[map.team].money << "\n";
-
-    map.shopping_menu.setOptions(factory_produced_units, [&](const std::size_t &index)
+    map.shopping_menu.setOptions(map.game.players[map.team].money, factory_produced_units, [&](const std::size_t &index)
                                  {
             map.game.sendCreateUnit(factory_produced_units[index], map.team, tile_index);
             const auto unit = map.createUnit(factory_produced_units[index], map.team, tile_index);

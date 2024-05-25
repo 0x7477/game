@@ -33,8 +33,8 @@ public:
     network::NetworkManager &network_manager;
 
     std::map<Team, Player> players{};
-    Map map;
     Team current_active_player{Red};
+    Map map;
     Scene::Battle& battle_scene;
 
     static Game *game;

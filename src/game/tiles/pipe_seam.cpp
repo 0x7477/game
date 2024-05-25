@@ -2,27 +2,29 @@
 #include <game/map.hpp>
 #include <map>
 #include <game/attack_simulator.hpp>
+#include <game/unit_names.hpp>
 namespace Tiles
 {
     class PipeSeam;
 }
 
-std::map<std::string, AttackSimulator::DamageValues> damage_table{
-    {{"AntiAir"}, {{}, 5}},
-    {{"Artillery"}, {40, {}}},
-    {{"BattleCopter"}, {20, 1}},
-    {{"Battleship"}, {50, {}}},
-    {{"Bomber"}, {90, {}}},
-    {{"Infantry"}, {{}, 100}},
-    {{"MediumTank"}, {45, 1}},
-    {{"Mech"}, {15, 1}},
-    {{"MegaTank"}, {115, 1}},
-    {{"NeoTank"}, {55, 1}},
-    {{"Piperunner"}, {50, {}}},
-    {{"Recon"}, {{}, 1}},
-    {{"Rocket"}, {50, {}}},
-    {{"Stealth"}, {60, {}}},
-    {{"Tank"}, {15, 1}},
+std::map<std::string, AttackSimulator::DamageValues> damage_table
+{
+    {{ANTIAIR}, {{}, 5}},
+    {{ARTILLERY}, {40, {}}},
+    {{BATTLECOPTER}, {20, 1}},
+    {{BATTLESHIP}, {50, {}}},
+    {{BOMBER}, {90, {}}},
+    {{INFANTRY}, {{}, 100}},
+    {{MEDIUMTANK}, {45, 1}},
+    {{MECH}, {15, 1}},
+    {{MEGATANK}, {115, 1}},
+    {{NEOTANK}, {55, 1}},
+    {{PIPERUNNER}, {50, {}}},
+    {{RECON}, {{}, 1}},
+    {{ROCKET}, {50, {}}},
+    {{STEALTH}, {60, {}}},
+    {{TANK}, {15, 1}},
 };
 
 struct PipeSeamAttackInteraction : public TileAttackInteraction

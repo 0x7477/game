@@ -7,7 +7,7 @@ namespace Units
     {
     public:
         Infantry(const Team &team)
-            : Unit{team, {3, Foot}}
+            : Unit{team, {3, Foot, 0}}
         {
             actions[Capture] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target){this->executeCaptureAction(map, me, new_position, target);};
         }

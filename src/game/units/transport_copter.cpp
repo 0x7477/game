@@ -10,9 +10,14 @@ namespace Units
 
     public:
         TransportCopter(const Team &team)
-            : Unit{team, {6, Air}}
+            : Unit{team, {6,Air,0}}
         {
             actions[Unload] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target){this->executeUnloadAction(map, me, new_position, target);};
+        }
+
+        virtual bool receivesTerrainBonus() const override
+        {
+            return false;
         }
         virtual bool allowUnitInteraction(const Unit &unit) override
         {
@@ -30,7 +35,7 @@ namespace Units
                 return;
             }
 
-            assert(!loaded_unit); // should be disallowd by allowUnitInteraction
+            assert(!loaded_unit); // should be disallowed by allowUnitInteraction
             loaded_unit = map[unit].unit;
             map[unit].unit = nullptr;
         }

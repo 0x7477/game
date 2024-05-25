@@ -15,25 +15,13 @@
 #include <game/visualization_mode.hpp>
 #include <game/tile_index.hpp>
 #include <ui/endcard.hpp>
+#include <ui/unit_detail.hpp>
 class Game;
-
 
 class Map
 {
 public:
-    Map(Game& game, const std::string &data_string)
-        : game{game}, cursor_sprite{gif_resources.get("unit_select.gif")},
-          tiles{initTiles(data_string)}, width{(unsigned)tiles[0].size()}, height{(unsigned)tiles.size()}
-    {
-        (*this)[4, 4].unit = Unit::createUnit("Infantry", Team::Blue);
-        // (*this)[5, 4].unit = Unit::createUnit("TransportCopter", Team::Red);
-        (*this)[6, 4].unit = Unit::createUnit("Infantry", Team::Red);
-        (*this)[6, 4].unit->heal(-80);
-
-        (*this)[7, 4].unit = Unit::createUnit("Infantry", Team::Red);
-        (*this)[7, 4].unit->heal(-80);
-
-    }
+    Map(Game &game, const std::string &data_string);
 
     std::vector<std::vector<unsigned>> getTileIds(const std::string &data_string);
 
@@ -74,30 +62,29 @@ public:
 
     void handleMenu();
 
-    void beginTurn(const Team& team)
+    void beginTurn(const Team &begin_turn_team)
     {
+        (void)begin_turn_team;
         for (unsigned y{0}; y < height; y++)
             for (unsigned x{0}; x < width; x++)
             {
-                auto& tile = (*this)[{x,y}];
-                if(tile.team == team)
-                    tile.startRound(*this, {x, y});
+                auto &tile = (*this)[{x, y}];
+                tile.startRound(*this, {x, y});
 
                 if (tile.unit)
                     tile.unit->startRound(*this, {x, y});
             }
-                
     }
 
     void drawMap(sf::RenderWindow &window)
     {
         for (unsigned y{0}; y < height; y++)
             for (unsigned x{0}; x < width; x++)
-                (*this)[{x,y}].display(window, *this, {x, y});
+                (*this)[{x, y}].display(window, *this, {x, y});
 
         for (unsigned y{0}; y < height; y++)
             for (unsigned x{0}; x < width; x++)
-                (*this)[{x,y}].displayUnit(window, *this, {x, y});
+                (*this)[{x, y}].displayUnit(window, *this, {x, y});
     }
 
     void moveCursorInDirection(unsigned &cursor_var, const int delta, float &time_since_movement, const unsigned &max_value)
@@ -156,52 +143,38 @@ public:
             time_since_movement_button_was_pressed += delta_time;
     }
 
-    bool hasTeamNoUnitsLeft(const Team& team)
+    bool hasTeamNoUnitsLeft(const Team &team)
     {
         for (unsigned y{0}; y < tiles.size(); y++)
             for (unsigned x{0}; x < tiles[y].size(); x++)
-                {
-                    const auto& tile = (*this)[{x,y}];
-                    if(tile.unit && tile.unit->getTeam() == team)
-                        return false;
-                }
+            {
+                const auto &tile = (*this)[{x, y}];
+                if (tile.unit && tile.unit->getTeam() == team)
+                    return false;
+            }
 
         return true;
     }
 
-    void win(const Team& winner_team);
+    void win(const Team &winner_team);
 
     void killUnit(const TileIndex &position)
     {
         const auto team = (*this)[position].unit->getTeam();
         (*this)[position].unit = nullptr;
-        if(hasTeamNoUnitsLeft(team))
+        if (hasTeamNoUnitsLeft(team))
             win(team == Red ? Blue : Red);
-            
     }
 
-    std::shared_ptr<Unit> createUnit(const std::string &id, const Team &team_id, const TileIndex &position)
-    {
-        return createUnit(id, team_id, getTile(position));
-    }
+    std::shared_ptr<Unit> createUnit(const std::string &id, const Team &team_id, const TileIndex &position);
 
-    std::shared_ptr<Unit> createUnit(const std::string &id, const Team &team_id, Tile &tile)
-    {
-        tile.unit = Unit::createUnit(id, team_id);
-        return tile.unit;
-    }
-
-    std::shared_ptr<Unit> createUnit(const std::shared_ptr<Unit> &unit, const TileIndex &position)
-    {
-        (*this)[position].unit = unit;
-        return unit;
-    }
+    std::shared_ptr<Unit> createUnit(const std::string &id, const Team &team_id, Tile &tile);
 
     void clearTileEffects()
     {
         for (unsigned y{0}; y < tiles.size(); y++)
             for (unsigned x{0}; x < tiles[y].size(); x++)
-                (*this)[{x,y}].setDisplayMode(Tile::DisplayMode::Normal);
+                (*this)[{x, y}].setDisplayMode(Tile::DisplayMode::Normal);
     }
 
     void setMovementTileMode(const std::vector<TileIndex> &indices, const Tile::DisplayMode &mode)
@@ -230,7 +203,7 @@ public:
         return 0;
     }
 
-    Game& game;
+    Game &game;
     sf::Sprite cursor_sprite;
     std::vector<std::vector<std::unique_ptr<Tile>>> tiles{};
     unsigned width, height;
@@ -254,6 +227,8 @@ public:
     UI::ShoppingMenu shopping_menu{};
     UI::ActionMenu action_menu{};
     UI::EndCard endcard;
+    UI::UnitDetail unit_detail;
+    sf::Text money_text;
     ViewMode mode{View};
     DeltaTimer delta_time{};
 };

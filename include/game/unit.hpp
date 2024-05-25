@@ -14,6 +14,7 @@
 #include <game/teams.hpp>
 #include <ui/gif.hpp>
 #include <array>
+#include <game/unit_names.hpp>
 
 class Tile;
 class Map;
@@ -24,8 +25,14 @@ class Unit
 public:
     struct Stats
     {
-        unsigned movement_speed;
+        Stats(const unsigned &movement_speed, const MovementType &movement_type, const unsigned &ammo, const unsigned &attack_range_min = 1, const unsigned &attack_range_max = 1)
+            : movement_speed{movement_speed}, movement_type{movement_type}, attack_range_min{attack_range_min}, attack_range_max{attack_range_max}, max_ammo{ammo}
+        {
+        }
+        unsigned movement_speed{0};
         MovementType movement_type;
+        unsigned attack_range_min{0}, attack_range_max{0};
+        unsigned max_ammo{0};
     };
 
     struct Status
@@ -44,7 +51,7 @@ public:
         std::function<void()> execute;
     };
 
-    typedef std::function<void(Map& map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)> UnitActionFunction;
+    typedef std::function<void(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)> UnitActionFunction;
 
     enum ActionId : uint8_t
     {
@@ -58,16 +65,17 @@ public:
         ActionIdCount
     };
 
+    void refuel();
+
     Unit(const Team &team, const Stats &stats, const std::source_location &location = std::source_location::current());
 
+    virtual bool receivesTerrainBonus() const {return true;}
     void displayPath(sf::RenderWindow &window, Map &map);
     void display(sf::RenderWindow &window, const Map &map, const TileIndex &index);
 
+    std::optional<Action> getJoinAction(Map &map, const TileIndex &me, const TileIndex &target);
 
-
-    std::optional<Action> getJoinAction(Map &map,const TileIndex &me, const TileIndex &target);
-
-    virtual void onMoved(){};
+    virtual void onMoved() {};
 
     virtual void startRound(const Map &, const TileIndex &) {
     };
@@ -94,46 +102,43 @@ public:
         return function_name.substr(start, end - start);
     }
 
-    
-
-    //actions
-    void executeAction(const ActionId& action, Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target);
+    // actions
+    void executeAction(const ActionId &action, Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target);
     void executeWaitAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target = {});
     void executeLoadAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target = {});
     void executeUnloadAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target = {});
     void executeAttackAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target);
     void executeJoinAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target);
 
-
     bool select(Map &map, const TileIndex &index);
     void act(Map &map, const TileIndex &me, const TileIndex &target);
     void move(Map &map, const TileIndex &from, const TileIndex &to);
     void displayMovementTiles(Map &map, const TileIndex &index);
 
-
     unsigned getCosts();
-    void heal(const unsigned& amount);
+    void heal(const unsigned &amount);
 
     MovementType getMovementType() const { return stats.movement_type; }
     unsigned getMovementSpeed() const { return stats.movement_speed; }
 
     virtual bool allowUnitInteraction(const Unit &unit)
     {
-        if(getUnitCount() < 10 && id == unit.id)
+        if (getUnitCount() < 10 && id == unit.id)
             return true;
         return false;
     }
 
-    virtual std::vector<Action> getUnitInteractionOption(Map & map, const TileIndex &me, const TileIndex &target) 
-    { 
-        const auto join_action_option = getJoinAction(map, me, target);
-        if(join_action_option)
-            return {*join_action_option};
-        return {}; }; // TODO ADD JOIN HERE
-
-    virtual void executeUnitInteraction(Map &map, const TileIndex &from, const TileIndex &to) 
+    virtual std::vector<Action> getUnitInteractionOption(Map &map, const TileIndex &me, const TileIndex &target)
     {
-        executeJoinAction(map, from, to,to);
+        const auto join_action_option = getJoinAction(map, me, target);
+        if (join_action_option)
+            return {*join_action_option};
+        return {};
+    }; // TODO ADD JOIN HERE
+
+    virtual void executeUnitInteraction(Map &map, const TileIndex &from, const TileIndex &to)
+    {
+        executeJoinAction(map, from, to, to);
     }
 
     virtual std::vector<Action> handlePossibleActions(Map &, const TileIndex &, const TileIndex &) { return {}; }
@@ -149,13 +154,18 @@ public:
     std::string id;
     constexpr static int max_health{100};
     int health{max_health};
-    unsigned ammo{0};
     static inline std::map<std::string, std::function<std::shared_ptr<Unit>(const Team &)>> library;
 
-    void endTurn(Map &map, const bool& finished = true);
+    void endTurn(Map &map, const bool &finished = true);
 
-protected:
+    bool isRangedUnit()
+    {
+        return stats.attack_range_min > 1;
+    }
+
+public:
     Stats stats;
+protected:
     Team team{Team::Red};
 
     std::array<UnitActionFunction, ActionIdCount> actions{nullptr};
@@ -163,11 +173,11 @@ protected:
 public:
     Status status;
     MovementManager movement_manager;
-
+    unsigned ammo;
     static std::map<std::string, unsigned> unit_costs;
+
 protected:
     sf::Sprite health_text;
-
 };
 
 template <typename T>

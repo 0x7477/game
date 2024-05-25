@@ -1,6 +1,8 @@
 #include <game/unit.hpp>
 
 std::map<std::string, unsigned> Unit::unit_costs{
-    {"Infantry", 1000},
-    {"TransportCopter", 5000},
+    {INFANTRY, 1000},
+    {TCOPTER, 5000},
+    {ARTILLERY, 1000},
+    {TANK, 7000},
 };

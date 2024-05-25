@@ -14,7 +14,6 @@ list(FILTER src EXCLUDE REGEX "generator_main.cpp$")
 
 # add_library(${PROJECT_NAME}_lib ${src})
 add_executable(${PROJECT_NAME} src/generator_main.cpp)
-
 add_executable(server ${src} src/server_main.cpp)
 add_executable(client ${src} src/client_main.cpp)
 

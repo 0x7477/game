@@ -3,13 +3,13 @@
 #include <game/unit.hpp>
 #include <cmath>
 
-bool AttackSimulator::canAttack(const Unit& attacker, const Unit& defender)
+bool AttackSimulator::canAttack(const Unit &attacker, const Unit &defender)
 {
-    if(!damage_table.contains({attacker.id,defender.id}))
+    if (!damage_table.contains({attacker.id, defender.id}))
         return false;
 
-    const auto& damage_value = damage_table[{attacker.id,defender.id}];
-    if(attacker.ammo == 0 && !damage_value.secondary)
+    const auto &damage_value = damage_table[{attacker.id, defender.id}];
+    if (attacker.ammo == 0 && !damage_value.secondary)
         return false;
 
     return true;
@@ -42,7 +42,7 @@ std::tuple<unsigned, bool> AttackSimulator::calculateDamage(Map &map, const Tile
     const auto attacker_unit_count = attacker->getUnitCount();
 
     const auto defense_value = 100;
-    const auto terrain_defense = map[defender_index].getDefense();
+    const auto terrain_defense = defender->receivesTerrainBonus() ? map[defender_index].getDefense() : 0;
 
     const auto defender_unit_count = defender->getUnitCount();
 
@@ -69,9 +69,9 @@ AttackSimulator::AttackResult AttackSimulator::attack(Map &map, const TileIndex 
     const auto defender_died = defender->health <= 0;
     const auto can_defender_attack_attacker = damage_table.contains({defender->id, attacker->id});
 
-    const auto was_direct_attack = TileIndex::areTileIndexesAdjacent(attacker_index,defender_index);
+    const auto was_direct_attack = TileIndex::areTileIndexesAdjacent(attacker_index, defender_index);
 
-    const auto does_defender_counterattack = !defender_died && can_defender_attack_attacker && was_direct_attack;
+    const auto does_defender_counterattack = !defender_died && was_direct_attack && can_defender_attack_attacker && !defender->isRangedUnit();
 
     if (does_defender_counterattack)
     {

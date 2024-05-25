@@ -2,6 +2,20 @@
 #include <game/game.hpp>
 #include <scenes/battle.hpp>
 
+Map::Map(Game &game, const std::string &data_string)
+    : game{game}, cursor_sprite{gif_resources.get("unit_select.gif")},
+      tiles{initTiles(data_string)}, width{(unsigned)tiles[0].size()}, height{(unsigned)tiles.size()},
+      money_text{"", font_resources.get("arial.ttf")}
+{
+    beginTurn(team);
+    (*this)[4, 4].unit = Unit::createUnit("Infantry", Team::Blue);
+    // (*this)[5, 4].unit = Unit::createUnit("TransportCopter", Team::Red);
+    (*this)[6, 4].unit = Unit::createUnit("Infantry", Team::Red);
+    (*this)[6, 4].unit->heal(-80);
+
+    (*this)[7, 4].unit = Unit::createUnit("Infantry", Team::Red);
+    (*this)[7, 4].unit->heal(-80);
+}
 template <>
 void Map::displayMode<ViewMode::Shopping>(sf::RenderWindow &window)
 {
@@ -25,6 +39,15 @@ void Map::displayMode<ViewMode::View>(sf::RenderWindow &window)
         getTile(*selected_unit).unit->displayPath(window, *this);
 
     drawCursor(window);
+    money_text.setString(std::to_string(game.players[team].money));
+    money_text.setOrigin(0, 0);
+    window.draw(money_text);
+
+    if((*this)[cursor].unit)
+    {
+        unit_detail.setInfo((*this)[cursor].unit->health, (*this)[cursor].unit->ammo);
+        unit_detail.draw(window);
+    }
 }
 template <>
 void Map::displayMode<ViewMode::SelectTarget>(sf::RenderWindow &window)
@@ -84,10 +107,10 @@ void Map::display(sf::RenderWindow &window)
         displayMode<SelectTarget>(window);
 }
 
-
-void Map::win(const Team& winner_team)
+void Map::win(const Team &winner_team)
 {
-    endcard.setResult(winner_team == team, [this](){game.battle_scene.setScene("menu");}); 
+    endcard.setResult(winner_team == team, [this]()
+                      { game.battle_scene.setScene("menu"); });
     winner = winner_team;
 }
 
@@ -238,4 +261,16 @@ void Map::endTurn()
         for (unsigned x{0}; x < width; x++)
             if ((*this)[{x, y}].unit)
                 (*this)[{x, y}].unit->setFinished(false);
+}
+
+std::shared_ptr<Unit> Map::createUnit(const std::string &id, const Team &team_id, const TileIndex &position)
+{
+    return createUnit(id, team_id, getTile(position));
+}
+
+std::shared_ptr<Unit> Map::createUnit(const std::string &id, const Team &team_id, Tile &tile)
+{
+    tile.unit = Unit::createUnit(id, team_id);
+    game.players[team_id].money -= Unit::unit_costs[id];
+    return tile.unit;
 }

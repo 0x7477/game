@@ -13,7 +13,7 @@
 
 Unit::Unit(const Team &team, const Stats &stats, const std::source_location &location)
     : id{getClassName(location)},
-      stats{stats}, team{team}, movement_manager{*this}, health_text{image_resources.get("numbers/1.png")}
+      stats{stats}, team{team}, movement_manager{*this}, ammo{stats.max_ammo}, health_text{image_resources.get("numbers/1.png")}
 {
     actions[Wait] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)
     { this->executeWaitAction(map, me, new_position, target); };
@@ -30,6 +30,11 @@ Unit::Unit(const Team &team, const Stats &stats, const std::source_location &loc
 void Unit::displayPath(sf::RenderWindow &window, Map &map)
 {
     movement_manager.displayPath(window, map);
+}
+
+void Unit::refuel()
+{
+    ammo = stats.max_ammo;
 }
 
 void Unit::updateCursor(Map &map, const TileIndex &cursor)
@@ -173,7 +178,7 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
 
         if (!has_target_unit || target == me)
         {
-            const auto possible_attack_tiles = AttackSelector::getTiles(map, target, *this, 1, 1);
+            const auto possible_attack_tiles = AttackSelector::getTiles(map, target, *this, stats.attack_range_min, stats.attack_range_max);
             if (possible_attack_tiles.size() > 0)
             {
                 options.push_back("Attack");
@@ -243,8 +248,12 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
 
 void Unit::executeJoinAction(Map &map, const TileIndex &from, const TileIndex &to, const TileIndex &)
 {
-    const auto health = 10 * map[from].unit->getUnitCount();
-    map[to].unit->heal(health);
+    const int health = map[from].unit->getUnitCount();
+    const int missing_health = 10 - map[to].unit->getUnitCount();
+    const int healing = std::min(health, missing_health);
+    const int money_compensation = (health - healing) * map[from].unit->getCosts() / 10;
+    map.game.players[map[from].unit->getTeam()].money += money_compensation;
+    map[to].unit->heal(healing * 10);
     map[to].unit->setFinished();
     map[from].unit = nullptr;
     endTurn(map);
