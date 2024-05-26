@@ -18,7 +18,7 @@ namespace Tiles
 
 namespace
 {
-    bool init = init_tile<Tiles::City>(43) &&
+    bool init = init_tile<Tiles::City>(34) &&
                 init_tile<Tiles::City>(38, Red) &&
-                init_tile<Tiles::City>(34, Blue);
+                init_tile<Tiles::City>(43, Blue);
 }

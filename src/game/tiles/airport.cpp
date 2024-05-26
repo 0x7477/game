@@ -20,7 +20,7 @@ namespace Tiles
 
 namespace
 {
-    bool init = init_tile<Tiles::Airport>(45) &&
+    bool init = init_tile<Tiles::Airport>(36) &&
                 init_tile<Tiles::Airport>(40, Red) &&
-                init_tile<Tiles::Airport>(36, Blue);
+                init_tile<Tiles::Airport>(45, Blue);
 }

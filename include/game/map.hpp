@@ -110,6 +110,20 @@ public:
         }
     }
 
+    void moveMapToContain(const TileIndex &index)
+    {
+        const auto [x, y] = getScreenPosition(index);
+
+        if (x < 0)
+            pos_x -= x;
+        if (y < 0)
+            pos_y -= y;
+        if (x > WindowManager::window_width - 16 * scale)
+            pos_x += WindowManager::window_width - 16 * scale - x;
+        if (y > WindowManager::window_height - 16 * scale)
+            pos_y += WindowManager::window_height - 16 * scale - y;
+    }
+
     void moveCursor()
     {
         auto &[cursor_x, cursor_y] = cursor;
@@ -141,6 +155,8 @@ public:
             time_since_movement_button_was_pressed = 0;
         else
             time_since_movement_button_was_pressed += delta_time;
+
+        moveMapToContain(cursor);
     }
 
     bool hasTeamNoUnitsLeft(const Team &team)
@@ -185,7 +201,7 @@ public:
 
     std::tuple<float, float> getScreenPosition(const TileIndex &index) const
     {
-        return {index.x * 16 * scale, index.y * 16 * scale};
+        return {index.x * 16 * scale + pos_x, index.y * 16 * scale + pos_y};
     }
 
     Tile &operator[](const TileIndex &index)
@@ -209,7 +225,7 @@ public:
     unsigned width, height;
     Team team{Red};
     Team winner{Neutral};
-    // float pos_x, pos_y;
+    float pos_x{0}, pos_y{0};
     TileIndex cursor{1, 1};
     std::optional<TileIndex> selected_unit{};
 

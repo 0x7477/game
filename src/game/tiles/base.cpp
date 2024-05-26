@@ -21,7 +21,7 @@ namespace Tiles
 
 namespace
 {
-    bool init = init_tile<Tiles::Base>(44) &&
+    bool init = init_tile<Tiles::Base>(35) &&
                 init_tile<Tiles::Base>(39, Red) &&
-                init_tile<Tiles::Base>(35, Blue);
+                init_tile<Tiles::Base>(44, Blue);
 }
