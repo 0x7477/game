@@ -4,7 +4,7 @@
 
 namespace
 {
-    static ProduceUnit produce_unit{{"Infantry", "TransportCopter"}};
+    static ProduceUnit produce_unit{{LANDER, CRUISER, SUB, BATTLESHIP}};
     static RepairUnits repair_units{};
 }
 

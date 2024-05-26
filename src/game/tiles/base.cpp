@@ -5,7 +5,7 @@
 
 namespace
 {
-    static ProduceUnit produce_unit{{INFANTRY, ARTILLERY,TANK}};
+    static ProduceUnit produce_unit{{INFANTRY,MECH, RECON,  TANK, MEDIUMTANK, NEOTANK, APC,  ARTILLERY, ROCKET, ANTIAIR, MISSILE}};
     static RepairUnits repair_units{};
 }
 

@@ -1,10 +1,10 @@
 #include <game/tile.hpp>
 #include <game/map.hpp>
 #include <game/game.hpp>
-
+#include <game/unit_names.hpp>
 namespace
 {
-    static ProduceUnit produce_unit{{"TransportCopter"}};
+    static ProduceUnit produce_unit{{TCOPTER, BATTLECOPTER, FIGHTER, BOMBER}};
     static RepairUnits repair_units{};
 }
 

@@ -19,7 +19,7 @@ namespace UI
 
         void draw(sf::RenderWindow &window)
         {
-            if(WindowManager::getKeyDown(sf::Keyboard::X))
+            if(WindowManager::getKeyDown(sf::Keyboard::X) && can_cancel)
             {
                 on_cancel();
                 return;
@@ -64,18 +64,20 @@ namespace UI
             options.clear();
         }
 
-        void setOptions(const std::vector<std::string> &new_options, const std::function<void(const std::size_t&)> &on_value_selected_function,const std::function<void()> &on_cancel_function)
+        void setOptions(const std::vector<std::string> &new_options, const std::function<void(const std::size_t&)> &on_value_selected_function,const std::optional<std::function<void()>> &on_cancel_function)
         {
+            can_cancel = on_cancel_function.has_value();
             options = new_options;
             on_value_selected = on_value_selected_function;
-            on_cancel = on_cancel_function;
+            if(can_cancel)
+                on_cancel = *on_cancel_function;
             current_index = 0;
         }
 
         bool drawing{false};
         Layout layout;
 
-
+        bool can_cancel{true};
         std::vector<std::string> options;
         std::size_t current_index{0};
         std::function<void(const std::size_t&)> on_value_selected{[](const std::size_t&){}};

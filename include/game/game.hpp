@@ -27,7 +27,7 @@ public:
     }
 
     void endTurn();
-    void sendAction(const Unit::ActionId &id, const std::vector<TileIndex> &path, const TileIndex &target);
+    void sendAction(const Unit::ActionId &id, const std::vector<TileIndex> &path, const TileIndex &target, const unsigned& index = 0);
     void sendCreateUnit(const std::string &unit_id, const Team &team, const TileIndex &target);
 
     network::NetworkManager &network_manager;

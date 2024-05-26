@@ -48,10 +48,10 @@ public:
     struct Action
     {
         std::string name;
-        std::function<void()> execute;
+        std::function<void(const unsigned& index )> execute;
     };
 
-    typedef std::function<void(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)> UnitActionFunction;
+    typedef std::function<void(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target, const unsigned& index)> UnitActionFunction;
 
     enum ActionId : uint8_t
     {
@@ -69,7 +69,7 @@ public:
 
     Unit(const Team &team, const Stats &stats, const std::source_location &location = std::source_location::current());
 
-    virtual bool receivesTerrainBonus() const {return true;}
+    bool receivesTerrainBonus() const {return stats.movement_type != Air;}
     void displayPath(sf::RenderWindow &window, Map &map);
     void display(sf::RenderWindow &window, const Map &map, const TileIndex &index);
 
@@ -84,6 +84,7 @@ public:
     static void registerClass()
     {
         const auto id = getClassName();
+        std::cout << id << "\n";
         library[id] = [=](const Team &team) -> std::shared_ptr<Unit>
         { return std::make_shared<T>(team); };
     }
@@ -103,12 +104,11 @@ public:
     }
 
     // actions
-    void executeAction(const ActionId &action, Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target);
-    void executeWaitAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target = {});
-    void executeLoadAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target = {});
-    void executeUnloadAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target = {});
+    void executeAction(const ActionId &action, Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target, const unsigned& index);
+    void executeWaitAction(Map &map, const TileIndex &me, const TileIndex &new_position);
+    void executeLoadAction(Map &map, const TileIndex &me, const TileIndex &new_position);
     void executeAttackAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target);
-    void executeJoinAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target);
+    void executeJoinAction(Map &map, const TileIndex &me, const TileIndex &new_position);
 
     bool select(Map &map, const TileIndex &index);
     void act(Map &map, const TileIndex &me, const TileIndex &target);
@@ -121,11 +121,14 @@ public:
     MovementType getMovementType() const { return stats.movement_type; }
     unsigned getMovementSpeed() const { return stats.movement_speed; }
 
+    bool testIfCanBeJoinedWithUnit(const Unit &unit)
+    {
+        return getUnitCount() < 10 && id == unit.id;
+    }
+
     virtual bool allowUnitInteraction(const Unit &unit)
     {
-        if (getUnitCount() < 10 && id == unit.id)
-            return true;
-        return false;
+        return testIfCanBeJoinedWithUnit(unit);
     }
 
     virtual std::vector<Action> getUnitInteractionOption(Map &map, const TileIndex &me, const TileIndex &target)
@@ -138,7 +141,7 @@ public:
 
     virtual void executeUnitInteraction(Map &map, const TileIndex &from, const TileIndex &to)
     {
-        executeJoinAction(map, from, to, to);
+        executeJoinAction(map, from, to);
     }
 
     virtual std::vector<Action> handlePossibleActions(Map &, const TileIndex &, const TileIndex &) { return {}; }

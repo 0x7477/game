@@ -8,13 +8,37 @@ Map::Map(Game &game, const std::string &data_string)
       money_text{"", font_resources.get("arial.ttf")}
 {
     beginTurn(team);
-    (*this)[4, 4].unit = Unit::createUnit("Infantry", Team::Blue);
+    (*this)[0, 0].unit = Unit::createUnit(ANTIAIR, Team::Blue);
+    (*this)[0, 1].unit = Unit::createUnit(APC, Team::Blue);
+    (*this)[0, 2].unit = Unit::createUnit(ARTILLERY, Team::Blue);
+    (*this)[0, 3].unit = Unit::createUnit(BATTLECOPTER, Team::Blue);
+    (*this)[0, 4].unit = Unit::createUnit(BATTLESHIP, Team::Blue);
+    // (*this)[1, 0].unit = Unit::createUnit(BLACKBOAT, Team::Blue);
+    (*this)[1, 1].unit = Unit::createUnit(BOMBER, Team::Blue);
+    // (*this)[1, 2].unit = Unit::createUnit(CARRIER, Team::Blue);
+    (*this)[1, 3].unit = Unit::createUnit(CRUISER, Team::Blue);
+    (*this)[1, 4].unit = Unit::createUnit(FIGHTER, Team::Blue);
+    (*this)[2, 0].unit = Unit::createUnit(INFANTRY, Team::Blue);
+    (*this)[2, 1].unit = Unit::createUnit(LANDER, Team::Blue);
+    (*this)[2, 2].unit = Unit::createUnit(MEDIUMTANK, Team::Blue);
+    (*this)[2, 3].unit = Unit::createUnit(MECH, Team::Blue);
+    (*this)[3, 0].unit = Unit::createUnit(MEGATANK, Team::Blue);
+    (*this)[3, 1].unit = Unit::createUnit(MISSILE, Team::Blue);
+    (*this)[3, 2].unit = Unit::createUnit(NEOTANK, Team::Blue);
+    (*this)[3, 3].unit = Unit::createUnit(PIPERUNNER, Team::Blue);
+    (*this)[3, 4].unit = Unit::createUnit(RECON, Team::Blue);
+    (*this)[4, 0].unit = Unit::createUnit(ROCKET, Team::Blue);
+    // (*this)[4, 1].unit = Unit::createUnit(STEALTH, Team::Blue);
+    // (*this)[4, 2].unit = Unit::createUnit(SUB, Team::Blue);
+    (*this)[4, 3].unit = Unit::createUnit(TCOPTER, Team::Blue);
+    (*this)[4, 4].unit = Unit::createUnit(TANK, Team::Blue);
+    // (*this)[4, 4].unit = Unit::createUnit("Infantry", Team::Blue);
     // (*this)[5, 4].unit = Unit::createUnit("TransportCopter", Team::Red);
-    (*this)[6, 4].unit = Unit::createUnit("Infantry", Team::Red);
-    (*this)[6, 4].unit->heal(-80);
+    // (*this)[6, 4].unit = Unit::createUnit("Infantry", Team::Red);
+    // (*this)[6, 4].unit->heal(-80);
 
-    (*this)[7, 4].unit = Unit::createUnit("Infantry", Team::Red);
-    (*this)[7, 4].unit->heal(-80);
+    // (*this)[7, 4].unit = Unit::createUnit("Infantry", Team::Red);
+    // (*this)[7, 4].unit->heal(-80);
 }
 template <>
 void Map::displayMode<ViewMode::Shopping>(sf::RenderWindow &window)

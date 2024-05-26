@@ -14,7 +14,7 @@ constexpr std::string INFANTRY{"Infantry"};
 constexpr std::string LANDER{"Lander"};
 constexpr std::string MEDIUMTANK{"MediumTank"};
 constexpr std::string MECH{"Mech"};
-constexpr std::string MEGATANK{"MegaTank"};
+constexpr std::string MEGATANK{"Megatank"};
 constexpr std::string MISSILE{"Missile"};
 constexpr std::string NEOTANK{"Neotank"};
 constexpr std::string PIPERUNNER{"Piperunner"};
