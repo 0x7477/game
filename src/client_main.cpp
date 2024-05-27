@@ -14,7 +14,8 @@
 
 int main(int, char **)
 {
-    network::Client client{"127.0.0.1", 2001};
+    network::Client client{"89.163.208.69", 2001};
+    // network::Client client{"127.0.0.1", 2001};
     network::NetworkManager manager{client};
 
     std::ifstream ifs("maps/raw/darkling_treshold.txt");

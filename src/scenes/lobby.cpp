@@ -147,8 +147,8 @@ void Scene::Lobby::displayJoinError(const std::string &error_)
 
 void Scene::Lobby::setLobbyId(const network::Datagram<std::string> &data)
 {
-    std::cout << "created room\n";
     id = data.get();
+    std::cout << "created room" << id << "\n";
     room_number.setString(id);
     joined = true;
     battle.game.map.team = Team::Red;
