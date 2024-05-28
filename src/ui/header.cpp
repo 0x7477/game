@@ -24,7 +24,7 @@ void UI::Header::draw(sf::RenderWindow &window)
 
 }
 
-void UI::Header::setName(const std::string &)
+void UI::Header::setName(const std::string & name)
 {
     player.setString(name);
 }
