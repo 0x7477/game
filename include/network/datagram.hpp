@@ -7,6 +7,7 @@
 #include <cstring>
 #include <iostream>
 #include <vector>
+#include <cstdint>
 namespace network
 {
     typedef uint16_t message_length_t;

@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.25.2)
+cmake_minimum_required(VERSION 3.22.1)
 project(game)
 
-set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_FLAGS "-Wall -Werror -Wpedantic  -Wextra -Woverloaded-virtual -O3 -march=native -g")
 
 file(GLOB_RECURSE src src/**.cpp)
@@ -16,8 +16,10 @@ list(FILTER src EXCLUDE REGEX "generator_main.cpp$")
 add_executable(server ${src} src/server_main.cpp)
 add_executable(client ${src} src/client_main.cpp)
 
-target_link_libraries(server png uv sfml-system sfml-window sfml-graphics sfml-audio X11)
-target_link_libraries(client png uv sfml-system sfml-window sfml-graphics sfml-audio X11)
+# target_link_libraries(${PROJECT_NAME}_lib png uv)
+target_link_libraries(${PROJECT_NAME} png uv sfml-system sfml-window sfml-graphics sfml-audio X11)
+target_link_libraries(server png uv sfml-system sfml-window sfml-graphics sfml-audio X11 pthread)
+target_link_libraries(client png uv sfml-system sfml-window sfml-graphics sfml-audio X11 pthread)
 
 include_directories(include)
 # Copy resources directory to build directory
