@@ -29,7 +29,7 @@ int main(int, char **)
     Scene::Menu menu{window_manager, manager, lobby};
 
     window_manager.scene = &menu;
-    window_manager.scene = &map;
+    // window_manager.scene = &map;
 
     window_manager.start();
     // Game game{manager};
