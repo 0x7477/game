@@ -7,34 +7,22 @@
 #include <helper/resource_loader.hpp>
 #include <game/unit.hpp>
 
+class Tile;
+
 namespace UI
 {
     class UnitDetail
     {
     public:
-        UnitDetail()
-            : layout{}, text{"", font_resources.get("arial.ttf")}
-        {
-        }
+        UnitDetail();
 
-        void draw(sf::RenderWindow &window)
-        {
-            text.setString(health);
-            text.setPosition(500,500);
-            window.draw(text);
-            text.setString(ammo);
-            text.setPosition(500,550);
-            window.draw(text);
-        }
+        void draw(sf::RenderWindow &window);
 
-        void setInfo(const unsigned &health_, const unsigned &ammo_)
-        {
-            health = std::to_string(health_);
-            ammo = std::to_string(ammo_);
-        }
+        void setInfo(const Tile & tile);
 
-        Layout layout;
-        std::string health, ammo{0};
+        std::string protection, ammo, health;
         sf::Text text;
+        sf::Sprite background,health_symbol, shield_symbol, ammo_symbol;
+        bool display_ammo{false}, display_health{false};
     };
 }

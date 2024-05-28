@@ -1,6 +1,4 @@
 #include <game/unit.hpp>
-#include <game/map.hpp>
-#include <game/game.hpp>
 namespace Units
 {
     class Artillery : public Unit

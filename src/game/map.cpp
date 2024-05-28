@@ -5,9 +5,9 @@
 
 Map::Map(Game &game, const std::string &data_string)
     : game{game}, cursor_sprite{gif_resources.get("unit_select.gif")},
-      tiles{initTiles(data_string)}, width{(unsigned)tiles[0].size()}, height{(unsigned)tiles.size()},
-      money_text{"", font_resources.get("arial.ttf")}
+      tiles{initTiles(data_string)}, width{(unsigned)tiles[0].size()}, height{(unsigned)tiles.size()}
 {
+    resize();
     beginTurn(team);
     // (*this)[0, 0].unit = Unit::createUnit(ANTIAIR, Team::Blue);
     // (*this)[0, 1].unit = Unit::createUnit(APC, Team::Blue);
@@ -47,6 +47,11 @@ Map::Map(Game &game, const std::string &data_string)
 template <>
 void Map::displayMode<ViewMode::Shopping>(sf::RenderWindow &window)
 {
+    drawMap(window);
+    header.setMoney(game.players[game.current_active_player].money);
+    header.setName(game.players[game.current_active_player].name);
+    header.draw(window);
+
     shopping_menu.draw(window);
 }
 
@@ -54,6 +59,12 @@ template <>
 void Map::displayMode<ViewMode::Watch>(sf::RenderWindow &window)
 {
     drawMap(window);
+}
+void Map::resize()
+{
+    pos_x = (WindowManager::window_width - scale * 16* width) / 2;
+    pos_y = (WindowManager::window_height - scale * 16* height) / 2;
+
 }
 
 template <>
@@ -67,15 +78,14 @@ void Map::displayMode<ViewMode::View>(sf::RenderWindow &window)
         getTile(*selected_unit).unit->displayPath(window, *this);
 
     drawCursor(window);
-    money_text.setString(std::to_string(game.players[team].money));
-    money_text.setOrigin(0, 0);
-    window.draw(money_text);
 
-    if((*this)[cursor].unit)
-    {
-        unit_detail.setInfo((*this)[cursor].unit->health, (*this)[cursor].unit->ammo);
-        unit_detail.draw(window);
-    }
+    header.setMoney(game.players[game.current_active_player].money);
+    header.setName(game.players[game.current_active_player].name);
+    header.draw(window);
+
+    unit_detail.setInfo((*this)[cursor]);
+    unit_detail.draw(window);
+    
 }
 template <>
 void Map::displayMode<ViewMode::SelectTarget>(sf::RenderWindow &window)
@@ -144,8 +154,12 @@ void Map::win(const Team &winner_team)
 
 void Map::drawCursor(sf::RenderWindow &window)
 {
+
+    smooth_cursor_x += ((cursor.x * scale * tile_size) - smooth_cursor_x) * 0.03f;
+    smooth_cursor_y += ((cursor.y * scale * tile_size) - smooth_cursor_y) * 0.03f;
+
     cursor_sprite.setScale(scale * tile_size / cursor_sprite.getTexture()->getSize().x, scale * tile_size / cursor_sprite.getTexture()->getSize().y);
-    cursor_sprite.setPosition(pos_x + cursor.x * scale * tile_size, pos_y +cursor.y * scale * tile_size);
+    cursor_sprite.setPosition(smooth_x + smooth_cursor_x , smooth_y +smooth_cursor_y);
     window.draw(cursor_sprite);
 }
 
@@ -306,3 +320,178 @@ std::shared_ptr<Unit> Map::createUnit(const std::string &id, const Team &team_id
     game.players[team_id].money -= Unit::unit_costs[id];
     return tile.unit;
 }
+
+    Tile &Map::operator[](const unsigned &x, const unsigned &y)
+    {
+        return *tiles[y][x];
+    }
+
+     Tile &Map::operator[](const TileIndex &index)
+    {
+        return *tiles[index.y][index.x];
+    }
+
+    void Map::moveMapToContain(const TileIndex &index)
+    {
+        const auto [x, y] = getUnsmoothScreenPosition(index);
+
+        if (x < 0)
+            pos_x -= x;
+        if (y < 0)
+            pos_y -= y;
+        if (x > WindowManager::window_width - 16 * scale)
+            pos_x += WindowManager::window_width - 16 * scale - x;
+        if (y > WindowManager::window_height - 16 * scale)
+            pos_y += WindowManager::window_height - 16 * scale - y;
+    }
+
+    void Map::moveCursor()
+    {
+        auto &[cursor_x, cursor_y] = cursor;
+        delta_time.update();
+        bool button_was_pressed{false};
+        if (WindowManager::getKey(sf::Keyboard::Left) && !WindowManager::getKey(sf::Keyboard::Right))
+        {
+            button_was_pressed = true;
+            moveCursorInDirection(cursor_x, -1, time_since_last_left_move, width);
+        }
+        if (WindowManager::getKey(sf::Keyboard::Right) && !WindowManager::getKey(sf::Keyboard::Left))
+        {
+            button_was_pressed = true;
+            moveCursorInDirection(cursor_x, 1, time_since_last_right_move, width);
+        }
+        if (WindowManager::getKey(sf::Keyboard::Up) && !WindowManager::getKey(sf::Keyboard::Down))
+        {
+            button_was_pressed = true;
+
+            moveCursorInDirection(cursor_y, -1, time_since_last_up_move, height);
+        }
+        if (WindowManager::getKey(sf::Keyboard::Down) && !WindowManager::getKey(sf::Keyboard::Up))
+        {
+            button_was_pressed = true;
+            moveCursorInDirection(cursor_y, +1, time_since_last_down_move, height);
+        }
+
+        if (!button_was_pressed)
+            time_since_movement_button_was_pressed = 0;
+        else
+            time_since_movement_button_was_pressed += delta_time;
+
+        moveMapToContain(cursor);
+    }
+
+        bool Map::hasTeamNoUnitsLeft(const Team &team)
+    {
+        for (unsigned y{0}; y < tiles.size(); y++)
+            for (unsigned x{0}; x < tiles[y].size(); x++)
+            {
+                const auto &tile = (*this)[{x, y}];
+                if (tile.unit && tile.unit->getTeam() == team)
+                    return false;
+            }
+
+        return true;
+    }
+
+
+    void Map::killUnit(const TileIndex &position)
+    {
+        const auto team = (*this)[position].unit->getTeam();
+        (*this)[position].unit = nullptr;
+        if (hasTeamNoUnitsLeft(team))
+            win(team == Red ? Blue : Red);
+    }
+
+
+        void Map::clearTileEffects()
+    {
+        for (unsigned y{0}; y < tiles.size(); y++)
+            for (unsigned x{0}; x < tiles[y].size(); x++)
+                (*this)[{x, y}].setDisplayMode(Tile::DisplayMode::Normal);
+    }
+
+        void Map::setMovementTileMode(const std::vector<TileIndex> &indices, const Tile::DisplayMode &mode)
+    {
+        for (const auto &index : indices)
+            getTile(index).setDisplayMode(mode);
+    }
+
+
+
+        std::tuple<float, float> Map::getScreenPosition(const TileIndex &index) const
+    {
+        return {index.x * 16 * scale + smooth_x, index.y * 16 * scale + smooth_y};
+    }
+
+    std::tuple<float, float> Map::getUnsmoothScreenPosition(const TileIndex &index) const
+    {
+        return {index.x * 16 * scale + pos_x, index.y * 16 * scale + pos_y};
+    }
+
+    void Map::moveCursorInDirection(unsigned &cursor_var, const int delta, float &time_since_movement, const unsigned &max_value)
+    {
+        constexpr float time_between_scrolls{0.1};
+        constexpr float init_scroll_wait{0.3};
+        if (time_since_movement_button_was_pressed == 0)
+        {
+            cursor_var = std::max(0, std::min((int)max_value - 1, (int)cursor_var + delta));
+            time_since_movement = 0;
+        }
+        else if (time_since_movement_button_was_pressed >= init_scroll_wait)
+        {
+            if (time_since_movement > time_between_scrolls)
+            {
+                cursor_var = std::max(0, std::min((int)max_value - 1, (int)cursor_var + delta));
+                time_since_movement = 0;
+            }
+            else
+            {
+                time_since_movement += delta_time;
+            }
+        }
+    }
+
+
+    void Map::drawMap(sf::RenderWindow &window)
+    {
+        smooth_x += (pos_x - smooth_x) *0.03f;
+        smooth_y += (pos_y - smooth_y) *0.03f;
+
+        for (unsigned y{0}; y < height; y++)
+            for (unsigned x{0}; x < width; x++)
+                (*this)[{x, y}].display(window, *this, {x, y});
+
+        for (unsigned y{0}; y < height; y++)
+            for (unsigned x{0}; x < width; x++)
+                (*this)[{x, y}].displayUnit(window, *this, {x, y});
+    }
+
+    void Map::beginTurn(const Team &begin_turn_team)
+    {
+        (void)begin_turn_team;
+        for (unsigned y{0}; y < height; y++)
+            for (unsigned x{0}; x < width; x++)
+            {
+                auto &tile = (*this)[{x, y}];
+                tile.startRound(*this, {x, y});
+
+                if (tile.unit)
+                    tile.unit->startRound(*this, {x, y});
+            }
+    }
+
+    std::vector<TileIndex> Map::getNeighbors(const TileIndex &index)
+    {
+        std::vector<TileIndex> ret;
+
+        if (index.x > 0)
+            ret.push_back({index.x - 1, index.y});
+        if (index.x < width - 1)
+            ret.push_back({index.x + 1, index.y});
+        if (index.y > 0)
+            ret.push_back({index.x, index.y - 1});
+        if (index.y < height - 1)
+            ret.push_back({index.x, index.y + 1});
+
+        return ret;
+    }

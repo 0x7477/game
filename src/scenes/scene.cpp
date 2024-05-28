@@ -9,6 +9,9 @@ Scene::Scene::Scene(const std::string& name, WindowManager &window_manager)
     scenes[name] = this;
 }
 
+void Scene::Scene::resize(){}
+
+
 void Scene::Scene::setScene(const std::string& name)
 {
     if(!scenes.contains(name))

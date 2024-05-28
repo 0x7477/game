@@ -41,6 +41,7 @@ void WindowManager::update()
             window_width = event.size.width;
             window_height = event.size.height;
             window.setView(sf::View(sf::FloatRect(0, 0, window_width, window_height)));
+            scene->resize();
         }
         else if(event.type == sf::Event::MouseWheelMoved)
         {

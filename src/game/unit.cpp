@@ -15,13 +15,13 @@ Unit::Unit(const Team &team, const Stats &stats, const std::source_location &loc
     : id{getClassName(location)},
       stats{stats}, team{team}, movement_manager{*this}, ammo{stats.max_ammo}, health_text{image_resources.get("numbers/1.png")}
 {
-    actions[Wait] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &, const unsigned&)
+    actions[Wait] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &, const unsigned &)
     { this->executeWaitAction(map, me, new_position); };
-    actions[Attack] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target, const unsigned&)
+    actions[Attack] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target, const unsigned &)
     { this->executeAttackAction(map, me, new_position, target); };
-    actions[Load] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &, const unsigned& )
+    actions[Load] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &, const unsigned &)
     { this->executeLoadAction(map, me, new_position); };
-    actions[Join] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &, const unsigned&)
+    actions[Join] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &, const unsigned &)
     { this->executeJoinAction(map, me, new_position); };
 
     health_text.setOrigin(health_text.getTexture()->getSize().x, health_text.getTexture()->getSize().y);
@@ -63,9 +63,8 @@ void Unit::display(sf::RenderWindow &window, const Map &map, const TileIndex &in
 
 unsigned Unit::getCosts()
 {
-    return unit_costs[id];   
+    return unit_costs[id];
 }
-
 
 void Unit::heal(const unsigned &amount)
 {
@@ -74,10 +73,81 @@ void Unit::heal(const unsigned &amount)
 
 std::shared_ptr<Unit> Unit::createUnit(const std::string &id, const Team &team)
 {
-    if(!library.contains(id))
+    if (!library.contains(id))
         std::cout << id << "\n";
     assert(library.contains(id));
     return library[id](team);
+}
+
+Team Unit::getTeam() const
+{
+    return team;
+}
+
+Unit::Stats::Stats(const unsigned &movement_speed, const MovementType &movement_type, const unsigned &ammo, const unsigned &attack_range_min, const unsigned &attack_range_max)
+    : movement_speed{movement_speed}, movement_type{movement_type}, attack_range_min{attack_range_min}, attack_range_max{attack_range_max}, max_ammo{ammo}
+{
+}
+
+bool Unit::Status::canAct() const
+{
+    return !finished;
+}
+
+void Unit::startRound(const Map &, const TileIndex &) {
+};
+std::string Unit::getClassName(const std::source_location &location)
+{
+    const std::string function_name{location.function_name()};
+    const auto start{function_name.find_last_of(':') + 1};
+    const auto end{function_name.find_last_of(']')};
+
+    if (end == std::string::npos)
+        return function_name.substr(7, function_name.find(':', 8) - 7);
+
+    return function_name.substr(start, end - start);
+}
+
+MovementType Unit::getMovementType() const
+{
+    return stats.movement_type;
+}
+unsigned Unit::getMovementSpeed() const
+{
+    return stats.movement_speed;
+}
+
+bool Unit::testIfCanBeJoinedWithUnit(const Unit &unit)
+{
+    return getUnitCount() < 10 && id == unit.id;
+}
+
+bool Unit::allowUnitInteraction(const Unit &unit)
+{
+    return testIfCanBeJoinedWithUnit(unit);
+}
+
+std::vector<Unit::Action> Unit::getUnitInteractionOption(Map &map, const TileIndex &me, const TileIndex &target)
+{
+    const auto join_action_option = getJoinAction(map, me, target);
+    if (join_action_option)
+        return {*join_action_option};
+    return {};
+}
+
+void Unit::executeUnitInteraction(Map &map, const TileIndex &from, const TileIndex &to)
+{
+    executeJoinAction(map, from, to);
+}
+
+std::vector<Unit::Action> Unit::handlePossibleActions(Map &, const TileIndex &, const TileIndex &)
+{
+    return {};
+}
+
+bool Unit::isRangedUnit()
+{
+    return stats.attack_range_min > 1;
 }
 
 void Unit::displayMovementTiles(Map &map, const TileIndex &index)
@@ -117,7 +187,7 @@ void Unit::move(Map &map, const TileIndex &from, const TileIndex &to)
     onMoved();
 }
 
-void Unit::executeAction(const ActionId &action, Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target, const unsigned& index)
+void Unit::executeAction(const ActionId &action, Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target, const unsigned &index)
 {
     assert(actions[action] != nullptr);
     actions[action](map, me, new_position, target, index);
@@ -172,7 +242,7 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
 
     auto on_movement_finished = [&map, target, me, this]()
     {
-        std::map<std::string, std::function<void(const unsigned& index)>> actions{};
+        std::map<std::string, std::function<void(const unsigned &index)>> actions{};
         std::vector<std::string> options{}; // need to check if wait or join
 
         const auto target_tile = map[target];
@@ -184,7 +254,7 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
             if (possible_attack_tiles.size() > 0)
             {
                 options.push_back("Attack");
-                actions["Attack"] = [=, this, &map](const unsigned&)
+                actions["Attack"] = [=, this, &map](const unsigned &)
                 {
                     map.setMovementTileMode(possible_attack_tiles, Tile::DisplayMode::Attack);
                     map.mode = SelectTarget;
@@ -221,7 +291,7 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
         {
             options.push_back("Wait");
 
-            actions["Wait"] = [=, this, &map](const unsigned&)
+            actions["Wait"] = [=, this, &map](const unsigned &)
             {
                 executeWaitAction(map, me, target);
                 map.game.sendAction(Wait, movement_manager.getPath(), target);
@@ -261,23 +331,22 @@ void Unit::executeJoinAction(Map &map, const TileIndex &from, const TileIndex &t
     endTurn(map);
 }
 
-
-std::optional<Unit::Action> Unit::getJoinAction(Map &map,const TileIndex &me, const TileIndex &target)
+std::optional<Unit::Action> Unit::getJoinAction(Map &map, const TileIndex &me, const TileIndex &target)
 {
-    if(me == target)
-        return{};
-    if(!map[target].unit)
-        return{};
-    if(map[target].unit->getUnitCount() == 10)
-        return{};
+    if (me == target)
+        return {};
+    if (!map[target].unit)
+        return {};
+    if (map[target].unit->getUnitCount() == 10)
+        return {};
 
-    return Action{.name = "Join", .execute = [&map, me, target, this](const unsigned&)
-    {
-        std::cout << "movement_manager.getPath()" << "\n";
-        std::cout  << movement_manager.getPath().size() << "\n";
-        map.game.sendAction(Join, map[me].unit->movement_manager.getPath(), target);
-        executeJoinAction(map, me, target);
-    }};
+    return Action{.name = "Join", .execute = [&map, me, target, this](const unsigned &)
+                                  {
+                                      std::cout << "movement_manager.getPath()" << "\n";
+                                      std::cout << movement_manager.getPath().size() << "\n";
+                                      map.game.sendAction(Join, map[me].unit->movement_manager.getPath(), target);
+                                      executeJoinAction(map, me, target);
+                                  }};
 }
 
 unsigned Unit::getUnitCount() const

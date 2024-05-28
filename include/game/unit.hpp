@@ -6,7 +6,6 @@
 #include <functional>
 #include <optional>
 #include <cassert>
-#include <game/movement.hpp>
 #include <source_location>
 #include <game/tile_index.hpp>
 #include <game/movement_manager.hpp>
@@ -25,10 +24,8 @@ class Unit
 public:
     struct Stats
     {
-        Stats(const unsigned &movement_speed, const MovementType &movement_type, const unsigned &ammo, const unsigned &attack_range_min = 1, const unsigned &attack_range_max = 1)
-            : movement_speed{movement_speed}, movement_type{movement_type}, attack_range_min{attack_range_min}, attack_range_max{attack_range_max}, max_ammo{ammo}
-        {
-        }
+        Stats(const unsigned &movement_speed, const MovementType &movement_type, const unsigned &ammo, const unsigned &attack_range_min = 1, const unsigned &attack_range_max = 1);
+        
         unsigned movement_speed{0};
         MovementType movement_type;
         unsigned attack_range_min{0}, attack_range_max{0};
@@ -39,10 +36,7 @@ public:
     {
         bool finished : 1 {false};
 
-        bool canAct() const
-        {
-            return !finished;
-        }
+        bool canAct() const;
     };
 
     struct Action
@@ -77,8 +71,7 @@ public:
 
     virtual void onMoved() {};
 
-    virtual void startRound(const Map &, const TileIndex &) {
-    };
+    virtual void startRound(const Map &, const TileIndex &);
 
     template <typename T>
     static void registerClass()
@@ -91,17 +84,7 @@ public:
 
     static std::shared_ptr<Unit> createUnit(const std::string &id, const Team &team);
 
-    static std::string getClassName(const std::source_location &location = std::source_location::current())
-    {
-        const std::string function_name{location.function_name()};
-        const auto start{function_name.find_last_of(':') + 1};
-        const auto end{function_name.find_last_of(']')};
-
-        if (end == std::string::npos)
-            return function_name.substr(7, function_name.find(':', 8) - 7);
-
-        return function_name.substr(start, end - start);
-    }
+    static std::string getClassName(const std::source_location &location = std::source_location::current());
 
     // actions
     void executeAction(const ActionId &action, Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target, const unsigned& index);
@@ -118,35 +101,20 @@ public:
     unsigned getCosts();
     void heal(const unsigned &amount);
 
-    MovementType getMovementType() const { return stats.movement_type; }
-    unsigned getMovementSpeed() const { return stats.movement_speed; }
+    MovementType getMovementType() const;
+    unsigned getMovementSpeed() const;
 
-    bool testIfCanBeJoinedWithUnit(const Unit &unit)
-    {
-        return getUnitCount() < 10 && id == unit.id;
-    }
+    bool testIfCanBeJoinedWithUnit(const Unit &unit);
 
-    virtual bool allowUnitInteraction(const Unit &unit)
-    {
-        return testIfCanBeJoinedWithUnit(unit);
-    }
+    virtual bool allowUnitInteraction(const Unit &unit);
 
-    virtual std::vector<Action> getUnitInteractionOption(Map &map, const TileIndex &me, const TileIndex &target)
-    {
-        const auto join_action_option = getJoinAction(map, me, target);
-        if (join_action_option)
-            return {*join_action_option};
-        return {};
-    }; // TODO ADD JOIN HERE
+    virtual std::vector<Action> getUnitInteractionOption(Map &map, const TileIndex &me, const TileIndex &target);
 
-    virtual void executeUnitInteraction(Map &map, const TileIndex &from, const TileIndex &to)
-    {
-        executeJoinAction(map, from, to);
-    }
+    virtual void executeUnitInteraction(Map &map, const TileIndex &from, const TileIndex &to);
 
-    virtual std::vector<Action> handlePossibleActions(Map &, const TileIndex &, const TileIndex &) { return {}; }
+    virtual std::vector<Action> handlePossibleActions(Map &, const TileIndex &, const TileIndex &);
 
-    Team getTeam() const { return team; }
+    Team getTeam() const;
 
     void setTeam(const Team &team_) { team = team_; }
     void setFinished(const bool &finished = true) { status.finished = finished; }
@@ -161,10 +129,7 @@ public:
 
     void endTurn(Map &map, const bool &finished = true);
 
-    bool isRangedUnit()
-    {
-        return stats.attack_range_min > 1;
-    }
+    bool isRangedUnit();
 
 public:
     Stats stats;

@@ -5,6 +5,18 @@
 
 Game *Game::game{nullptr};
 
+    Game::Game(network::NetworkManager &network_manager, const std::string &map_data, Scene::Battle& battle_scene)
+        : network_manager{network_manager}, map{*this, map_data}, battle_scene{battle_scene}
+    {
+        game = this;
+    }
+
+    void Game::commitLobby(const Lobby &lobby)
+    {
+        for (const auto &[_, player] : lobby.players)
+            players[player.team] = Player(player.name, player.team);
+    }
+
 void unit_action(const network::Datagram<Unit::ActionId, std::vector<TileIndex>, TileIndex, unsigned> &data)
 {
     const auto id = std::get<0>(data.getData());
@@ -18,6 +30,9 @@ void unit_action(const network::Datagram<Unit::ActionId, std::vector<TileIndex>,
 
     const auto path_start = *path.begin();
     const auto path_end = *(path.end() - 1);
+
+    Game::game->map.moveMapToContain(path_start);
+    Game::game->map.moveMapToContain(path_end);
 
     const auto &unit = Game::game->map[path_start].unit;
 

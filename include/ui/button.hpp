@@ -23,16 +23,9 @@ namespace UI
         void draw(sf::RenderWindow &window);
         void setString(const std::string& text_);
         
-        Layout &getLayout()
-        {
-            return layout;
-        }
+        Layout &getLayout();
 
-        void setColor(const sf::Color &color)
-        {
-            background_color = color;
-            background.setFillColor(background_color);
-        }
+        void setColor(const sf::Color &color);
 
         bool hover;
         bool was_clicked_last_frame;

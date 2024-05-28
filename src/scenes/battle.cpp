@@ -8,6 +8,10 @@ Scene::Battle::Battle(WindowManager &window_manager, network::NetworkManager &ne
     battle_scene = this;
 }
 
+void Scene::Battle::resize()
+{
+    game.map.resize();
+}
 
 void Scene::Battle::run()
 {

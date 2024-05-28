@@ -14,17 +14,9 @@ namespace Scene
 class Game
 {
 public:
-    Game(network::NetworkManager &network_manager, const std::string &map_data, Scene::Battle& battle_scene)
-        : network_manager{network_manager}, map{*this, map_data}, battle_scene{battle_scene}
-    {
-        game = this;
-    }
+    Game(network::NetworkManager &network_manager, const std::string &map_data, Scene::Battle& battle_scene);
 
-    void commitLobby(const Lobby &lobby)
-    {
-        for (const auto &[_, player] : lobby.players)
-            players[player.team] = Player(player.name, player.team);
-    }
+    void commitLobby(const Lobby &lobby);
 
     void endTurn();
     void sendAction(const Unit::ActionId &id, const std::vector<TileIndex> &path, const TileIndex &target, const unsigned& index = 0);

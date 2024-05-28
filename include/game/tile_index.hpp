@@ -6,7 +6,7 @@
 class TileIndex
 {
 public:
-    TileIndex(){};
+    TileIndex();
     TileIndex(const unsigned &x, const unsigned &y);
 
     bool operator==(const TileIndex& other) const;

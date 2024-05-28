@@ -6,6 +6,7 @@ RUN set -ex;                                                                    
     mkdir -p /usr/src;                                                            
 
 COPY ./build/server /usr/src/
+COPY ./build/client /usr/src/
 COPY ./resources /usr/src/resources/
 WORKDIR /usr/src
 
