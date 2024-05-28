@@ -4,27 +4,13 @@
 class DeltaTimer
 {
 public:
-    DeltaTimer()
-        : last_update{std::chrono::system_clock::now()}
-    {
-    }
+    DeltaTimer();
 
-    void update()
-    {
-        const auto current_time = std::chrono::system_clock::now();
-        delta_time = std::chrono::duration<float>(current_time - last_update).count();
-        last_update = current_time;
-    }
+    void update();
 
-    operator float()
-    {
-        return delta_time;
-    }
+    operator float();
 
-    float get()
-    {
-        return delta_time;
-    }
+    float get();
 
 private:
     std::chrono::time_point<std::chrono::system_clock> last_update{};

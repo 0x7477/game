@@ -8,15 +8,8 @@ enum MovementType
 
 struct MovementCosts
 {
-
-    MovementCosts(const std::array<unsigned,MovementTypeCount> & costs)
-    :costs{costs}
-    {}
-
+    MovementCosts(const std::array<unsigned,MovementTypeCount> & costs);
+    
+    unsigned getCosts(const MovementType& type);
     std::array<unsigned,MovementTypeCount> costs;
-
-    unsigned getCosts(const MovementType& type)
-    {
-        return costs[type];
-    }
 };

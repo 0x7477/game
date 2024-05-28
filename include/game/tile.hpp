@@ -36,8 +36,7 @@ struct NoTilePlayerInteraction : public TilePlayerInteraction
 
 struct ProduceUnit : public TilePlayerInteraction
 {
-    ProduceUnit(const std::vector<std::string> &factory_produced_units)
-        : factory_produced_units{factory_produced_units} {}
+    ProduceUnit(const std::vector<std::string> &factory_produced_units);
 
     virtual bool interact(Map &map, const TileIndex &tile_index) const override;
 
@@ -96,47 +95,20 @@ public:
         TileRoundBehaviour& tile_round_behaviour = default_tile_round_behaviour;
     };
 
-    static std::string getClassName(const std::source_location &location = std::source_location::current())
-    {
-        const std::string function_name{location.function_name()};
-        const auto start{function_name.find_last_of(':') + 1};
-        const auto end{function_name.find_last_of(']')};
+    static std::string getClassName(const std::source_location &location = std::source_location::current());
 
-        if (end == std::string::npos)
-            return function_name.substr(7, function_name.find(':', 8) - 7);
-
-        return function_name.substr(start, end - start);
-    }
-
-    Tile(const TileInfo &info, const std::source_location &location = std::source_location::current())
-        : id{getClassName(location)}, info{info}, sprite{"tiles/" + id + "/" + std::to_string(team) + "/", "resources/images/"},
-          movement_effect{"misc/movement/", "resources/images/"},
-          attack_effect{"misc/attack_tile/", "resources/images/"}
-    {
-    }
+    Tile(const TileInfo &info, const std::source_location &location = std::source_location::current());
 
     void display(sf::RenderWindow &window, const Map &map, const TileIndex &index);
     void displayUnit(sf::RenderWindow &window, const Map &map, const TileIndex &index);
 
-    void setDisplayMode(const DisplayMode &new_display_mode)
-    {
-        display_mode = new_display_mode;
-    }
+    void setDisplayMode(const DisplayMode &new_display_mode);
 
-    bool interact(Map &map, const TileIndex &tile)
-    {
-        return info.player_interaction.interact(map, tile);
-    }
+    bool interact(Map &map, const TileIndex &tile);
 
-    void attack(Map &map, const TileIndex &unit, const TileIndex &tile)
-    {
-        return info.tile_attack_interaction.attack(map, unit, tile);
-    }
+    void attack(Map &map, const TileIndex &unit, const TileIndex &tile);
 
-    bool isAttackable(Map &map, const TileIndex &tile, const Unit &unit)
-    {
-        return info.tile_attack_interaction.isAttackable(map, tile, unit);
-    }
+    bool isAttackable(Map &map, const TileIndex &tile, const Unit &unit);
 
     template <typename T>
     static void registerClass(const unsigned &id)
@@ -163,46 +135,20 @@ public:
         return t; };
     }
 
-    void setDirection(const Direction &direction_)
-    {
-        direction = direction_;
-        sprite = UI::GIF("tiles/" + id + "/" + std::to_string(direction) + "/", "resources/images/");
-    }
+    void setDirection(const Direction &direction_);
 
-    unsigned getDefense() const
-    {
-        return info.defense;
-    }
+    unsigned getDefense() const;
 
-    unsigned getMovementCost(const MovementType &type)
-    {
-        return info.movement_costs.getCosts(type);
-    }
+    unsigned getMovementCost(const MovementType &type);
 
-    std::string getId() const
-    {
-        return id;
-    }
+    std::string getId() const;
 
     
-    void startRound(Map& map, const TileIndex& index)
-    {
-        info.tile_round_behaviour.handleStartOfTurn(map, index);
-    }
+    void startRound(Map& map, const TileIndex& index);
 
 
-    void setTeam(const Team &new_team)
-    {
-        team = new_team;
-        sprite = UI::GIF("tiles/" + id + "/" + std::to_string(team) + "/", "resources/images/");
-    }
-    static std::unique_ptr<Tile> createTile(unsigned id)
-    {
-        if (!library.contains(id))
-            std::cout << "missing id " << id << "\n";
-        assert(library.contains(id));
-        return library[id]();
-    }
+    void setTeam(const Team &new_team);
+    static std::unique_ptr<Tile> createTile(unsigned id);
 
     std::shared_ptr<Unit> unit{};
 

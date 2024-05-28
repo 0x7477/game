@@ -1,7 +1,4 @@
 #include <game/unit.hpp>
-#include <game/map.hpp>
-#include <game/game.hpp>
-#include <game/tile_selector.hpp>
 #include <game/units/transport.hpp>
 namespace Units
 {

@@ -1,6 +1,8 @@
 #include <game/tile_index.hpp>
 #include <network/datagram.hpp>
 
+
+TileIndex::TileIndex(){};
 TileIndex::TileIndex(const unsigned &x, const unsigned &y)
 :x{x}, y{y}
 {}

@@ -13,6 +13,7 @@ namespace Scene
         virtual void run();
 
         void setScene(const std::string& name);
+        virtual void resize();
 
     protected:
         WindowManager &window_manager;

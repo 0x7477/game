@@ -8,6 +8,17 @@ UI::Button::Button(const std::string &text_, const Layout &layout, std::function
     text.setOrigin(rect.left + rect.width / 2.0f, rect.top + rect.height / 2.0f);
 }
 
+UI::Layout &UI::Button::getLayout()
+{
+    return layout;
+}
+
+void UI::Button::setColor(const sf::Color &color)
+{
+    background_color = color;
+    background.setFillColor(background_color);
+}
+
 template <>
 void UI::Button::display<UI::Button::State::Normal>(sf::RenderWindow &window)
 {
@@ -42,7 +53,7 @@ void UI::Button::display<UI::Button::State::Pressed>(sf::RenderWindow &window)
     display<Hover>(window);
 }
 
-void UI::Button::setString(const std::string& text_)
+void UI::Button::setString(const std::string &text_)
 {
     text.setString(text_);
     sf::FloatRect rect = text.getLocalBounds();

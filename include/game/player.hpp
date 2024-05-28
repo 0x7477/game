@@ -5,11 +5,8 @@
 class Player
 {
 public:
-    Player() {}
-    Player(const std::string &name, const Team &team)
-        : name{name}, team{team}
-    {
-    }
+    Player();
+    Player(const std::string &name, const Team &team);
 
     std::string name{""};
     unsigned money{0};

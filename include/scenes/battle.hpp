@@ -17,6 +17,7 @@ namespace Scene
     public:
         Battle(WindowManager &window_manager, network::NetworkManager &network_manager, const std::string &map_data);
         virtual void run() override;
+        virtual void resize() override;
 
     private:
         sf::RenderWindow window;
