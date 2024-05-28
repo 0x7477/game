@@ -251,7 +251,7 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
         if (!has_target_unit || target == me)
         {
             const auto possible_attack_tiles = AttackSelector::getTiles(map, target, *this, stats.attack_range_min, stats.attack_range_max);
-            if (possible_attack_tiles.size() > 0)
+            if (possible_attack_tiles.size() > 0 && (!isRangedUnit() || isRangedUnit() && target == me))
             {
                 options.push_back("Attack");
                 actions["Attack"] = [=, this, &map](const unsigned &)

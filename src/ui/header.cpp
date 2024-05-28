@@ -26,7 +26,7 @@ void UI::Header::draw(sf::RenderWindow &window)
 
 void UI::Header::setName(const std::string &)
 {
-    // player.setString(name);
+    player.setString(name);
 }
 
 void UI::Header::setMoney(const unsigned &money_count)
