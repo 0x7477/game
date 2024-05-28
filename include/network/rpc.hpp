@@ -12,6 +12,7 @@
 #include <vector>
 #include <engine/game_object.hpp>
 
+
 namespace network
 {
     inline std::map<unsigned int, std::vector<GameObject*>> synced_objects;
@@ -19,6 +20,7 @@ namespace network
     typedef uint32_t rpc_message_length_t;
     typedef uint32_t rpc_id_t;
     typedef uint8_t RPCTarget;
+    inline std::map<rpc_id_t,rpc_id_t> id_translator{};
 
     namespace RPCTargets
     {
@@ -53,12 +55,13 @@ namespace network
     class RPC : public RPCBase
     {
     public:
-        constexpr RPC()
+        constexpr RPC(const std::string& id)
         {
-            rpcs[getID()] = this;
+            id_translator[getID()] = hash(id);
+            rpcs[hash(id)] = this;
 
             if constexpr (!std::is_same<response, void>::value)
-                new response();
+                new response(id+"i");
         }
 
         std::optional<SerializedDatagram> rpc(const std::string_view &data) override
@@ -91,6 +94,13 @@ namespace network
             return hash;
         }
 
+        static constexpr rpc_id_t hash(const std::string& string)
+        {
+            const auto hash{std::hash<std::string>{}(string)};
+            return hash;
+        }
+
+
         operator std::string()
         {
             return serialize();
@@ -105,7 +115,7 @@ namespace network
             RPCPacketHeader *header = (RPCPacketHeader *)message.data();
 
             header->message_length = message_size;
-            header->rpc_id = getID();
+            header->rpc_id = id_translator[getID()];
             header->target = target;
 
             std::memcpy(header + 1, data.data(), data.size());

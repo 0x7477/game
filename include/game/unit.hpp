@@ -77,7 +77,6 @@ public:
     static void registerClass()
     {
         const auto id = getClassName();
-        std::cout << id << "\n";
         library[id] = [=](const Team &team) -> std::shared_ptr<Unit>
         { return std::make_shared<T>(team); };
     }

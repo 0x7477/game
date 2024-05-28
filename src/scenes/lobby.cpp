@@ -45,18 +45,18 @@ network::RPC<network::Datagram<LobbyMember>, [](const auto &data)
                               const std::string lobby_id = data.get();
                               lobby_scene->setLobbyId(lobby_id);
                           }>>
-    create_game;
+    create_game{"create_game"};
 
 network::RPC<network::Datagram<LobbyMember>, [](const auto &data)
              {
                  lobby_scene->notifyPlayerJoined(data.get());
              }>
-    player_joined;
+    player_joined{"player_joined"};
 network::RPC<network::Datagram<unsigned>, [](const auto &data)
              {
                  lobby_scene->setReady(data.get());
              }>
-    player_ready;
+    player_ready{"player_ready"};
 
 network::RPC<network::Datagram<std::string, LobbyMember>, [](const auto &data)
              {
@@ -97,7 +97,7 @@ network::RPC<network::Datagram<std::string, LobbyMember>, [](const auto &data)
 
                               lobby_scene->onJoined(opt);
                           }>>
-    join_game;
+    join_game{"join_game"};
 
 Scene::Lobby::Lobby(WindowManager &window_manager, network::NetworkManager &network_manager, Battle& battle)
     : Scene{"lobby", window_manager},

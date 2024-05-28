@@ -17,7 +17,7 @@ auto add(const network::Datagram<int, int> &data)
     return network::Datagram<int>{data.get<0>() + data.get<1>()};
 }
 
-inline network::RPCChain<&print_num, &print_num, &print_num, &print_num, &print_num> add_rpc2;
+// inline network::RPCChain<&print_num, &print_num, &print_num, &print_num, &print_num> add_rpc2;
 
 network::NetworkManager::NetworkManager(Server &interface)
     : interface{interface}, id{0}, is_server{true}
@@ -56,7 +56,7 @@ network::RPC<network::Datagram<>, [](const auto &)
                 network::network_manager->setConnected();
 
                 std::cout << "set ID to "<< data.get() << "\n"; }>>
-    get_client_id;
+    get_client_id{"get_client_id"};
 
 void network::NetworkManager::connected()
 {

@@ -22,9 +22,9 @@ void tupleToArgsHelper(const Tuple &t, Func &&f)
 
 void construct(const network::Datagram<unsigned int, unsigned int, network::RPCTarget> &tuple);
 
-class network::RPC<network::Datagram<unsigned int, unsigned int, network::RPCTarget>, [](const auto &tuple)
+network::RPC<network::Datagram<unsigned int, unsigned int, network::RPCTarget>, [](const auto &tuple)
                    { construct(tuple); }>
-    synced_constructor;
+    synced_constructor{"synced_constructor"};
 
 template <typename T, typename... Args>
 class network::RPC<network::Datagram<unsigned int, unsigned int, Args...>, [](const auto &tuple)
@@ -38,7 +38,7 @@ class network::RPC<network::Datagram<unsigned int, unsigned int, Args...>, [](co
         const auto game_object = network::synced_objects[player][id];
         game_object->addComponent<T>(std::forward<decltype(args)>(args)...); });
                    }>
-    add_component;
+    add_component{"add component"};
 
 class Synced : public Component
 {

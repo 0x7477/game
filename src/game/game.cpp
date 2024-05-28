@@ -40,7 +40,7 @@ void unit_action(const network::Datagram<Unit::ActionId, std::vector<TileIndex>,
     unit->movement_manager.startAnimation([unit, path_start, path_end, target, id, index]()
                                           { unit->executeAction(id, Game::game->map, path_start, path_end, target, index); });
 }
-network::RPC<network::Datagram<Unit::ActionId, std::vector<TileIndex>, TileIndex, unsigned>, unit_action> unit_action_rpc;
+network::RPC<network::Datagram<Unit::ActionId, std::vector<TileIndex>, TileIndex, unsigned>, unit_action> unit_action_rpc{"unit_action_rpc"};
 
 void create_unit(const network::Datagram<std::string, Team, TileIndex> &data)
 {
@@ -52,7 +52,7 @@ void create_unit(const network::Datagram<std::string, Team, TileIndex> &data)
     Game::game->map[target].unit->setFinished();
     Game::game->players[team].money -= Unit::unit_costs[unit_id];
 }
-network::RPC<network::Datagram<std::string, Team, TileIndex>, create_unit> create_unit_rpc;
+network::RPC<network::Datagram<std::string, Team, TileIndex>, create_unit> create_unit_rpc{"create_unit_rpc"};
 
 void Game::sendAction(const Unit::ActionId &id, const std::vector<TileIndex> &path, const TileIndex &target, const unsigned &index)
 {
@@ -71,7 +71,7 @@ void end_turn(const network::Datagram<> &)
 
     Game::game->map.beginTurn(Game::game->current_active_player);
 }
-network::RPC<network::Datagram<>, end_turn> end_turn_rpc;
+network::RPC<network::Datagram<>, end_turn> end_turn_rpc{"end_turn_rpc"};
 
 void Game::endTurn()
 {

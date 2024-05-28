@@ -181,7 +181,6 @@ public:
         if (!info)
             return id;
 
-        std::cout << id << " --> ";
         const auto team = std::get<TileInfo::Team>(*info);
         const auto type = std::get<TileInfo::Type>(*info);
 
@@ -195,7 +194,6 @@ public:
         else
             new_id = TileInfo::ids[TileInfo::TileInfo{type, TileInfo::Blue}];
 
-        std::cout << new_id << "\n";
         return new_id;
     }
 
