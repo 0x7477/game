@@ -26,7 +26,9 @@ namespace Units
             if (capture_progress >= 20)
             {
                 map[target].setTeam(team);
-                map.win(team);
+
+                if(map[target].getId() == "Headquarter")
+                    map.win(team);
             }
 
             endTurn(map);

@@ -7,7 +7,7 @@ namespace Units
 
     public:
         Cruiser(const Team &team)
-            : Transport{team, {7,Air,9}, {BATTLECOPTER, TCOPTER}}
+            : Transport{team, {7,Ship,9}, {BATTLECOPTER, TCOPTER}}
         {}
     };
 }

@@ -5,7 +5,7 @@ namespace Units
     {
     public:
         Missile(const Team &team)
-            : Unit{team, {4, Treads, 6, 3,5}}
+            : Unit{team, {4, Tires, 6, 3,5}}
         {
         }
     };

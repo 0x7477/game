@@ -8,7 +8,7 @@ namespace Units
 
     public:
         APC(const Team &team)
-            : Transport{team, {6, Air, 0}, {INFANTRY, MECH}}
+            : Transport{team, {6, Treads, 0}, {INFANTRY, MECH}}
         {
         }
     };
