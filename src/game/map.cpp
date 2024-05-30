@@ -295,7 +295,7 @@ void Map::handleEvents()
                 clearTileEffects();
                 const auto tiles = MovementSelector::getTiles(*this, cursor, *tile.unit);
                 setMovementTileMode(tiles, Tile::DisplayMode::Move);
-                show_enemy_movement = true;
+                show_enemy_tiles = true;
             }
         }
         else
