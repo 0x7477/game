@@ -17,10 +17,18 @@ public:
     static std::optional<std::vector<TileIndex>> getPath(Map &map, const TileIndex &start, const TileIndex &end, const Unit &unit);
 };
 
+
+
 class AttackSelector
 {
 public:
     static std::vector<TileIndex> getTiles(Map &map, const TileIndex &tile_index, const Unit &unit, const unsigned &minimum_range, const unsigned &maximum_range);
+};
+
+class AttackableSelector
+{
+public:
+    static std::vector<TileIndex> getTiles(Map &map, const TileIndex &tile_index, const Unit &unit);
 };
 
 class UnloadSelector

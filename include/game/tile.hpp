@@ -99,8 +99,8 @@ public:
 
     Tile(const TileInfo &info, const std::source_location &location = std::source_location::current());
 
-    void display(sf::RenderWindow &window, const Map &map, const TileIndex &index);
-    void displayUnit(sf::RenderWindow &window, const Map &map, const TileIndex &index);
+    void display(sf::RenderWindow &window, Map &map, const TileIndex &index);
+    void displayUnit(sf::RenderWindow &window, Map &map, const TileIndex &index);
 
     void setDisplayMode(const DisplayMode &new_display_mode);
 

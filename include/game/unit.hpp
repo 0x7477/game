@@ -65,7 +65,8 @@ public:
 
     bool receivesTerrainBonus() const {return stats.movement_type != Air;}
     void displayPath(sf::RenderWindow &window, Map &map);
-    void display(sf::RenderWindow &window, const Map &map, const TileIndex &index);
+    void display(sf::RenderWindow &window, Map &map, const TileIndex &index);
+    virtual void displayAdditions(sf::RenderWindow &window, Map &map, const TileIndex &index);
 
     std::optional<Action> getJoinAction(Map &map, const TileIndex &me, const TileIndex &target);
 

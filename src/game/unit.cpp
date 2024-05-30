@@ -41,13 +41,21 @@ void Unit::updateCursor(Map &map, const TileIndex &cursor)
 {
     movement_manager.updatePath(map, cursor);
 }
+void Unit::displayAdditions(sf::RenderWindow &,  Map &, const TileIndex &)
+{
 
-void Unit::display(sf::RenderWindow &window, const Map &map, const TileIndex &index)
+}
+
+
+void Unit::display(sf::RenderWindow &window, Map &map, const TileIndex &index)
 {
     movement_manager.draw(window, map, index);
 
     if (movement_manager.isMoving())
         return;
+
+    displayAdditions(window, map, index);
+    
     if (getUnitCount() == 10)
         return;
 
@@ -59,6 +67,7 @@ void Unit::display(sf::RenderWindow &window, const Map &map, const TileIndex &in
     health_text.setScale(8 * map.scale / size.x, 8 * map.scale / size.y);
     health_text.setTexture(image_resources.get("numbers/" + std::to_string(getUnitCount()) + ".png"));
     window.draw(health_text);
+
 }
 
 unsigned Unit::getCosts()
@@ -208,6 +217,9 @@ void Unit::executeLoadAction(Map &map, const TileIndex &me, const TileIndex &new
 void Unit::executeAttackAction(Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target)
 {
     move(map, me, new_position);
+
+
+    map.animations.emplace_back(Animation{UI::GIF("misc/attack/", "resources/images/"), 0.81,target, 1,1});
 
     if (map[target].unit)
     {

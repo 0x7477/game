@@ -32,5 +32,7 @@ namespace Scene
                                 setScene("lobby"); }};
         UI::Button exit_button{"Exit", {60_percent, 20_percent, 30_percent, 20_percent}, [&]()
                                { window_manager.close(); }};
+        sf::Sprite background;
+
     };
 }

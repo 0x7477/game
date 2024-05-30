@@ -2,7 +2,7 @@
 #include <game/game.hpp>
 #include <scenes/battle.hpp>
 #include <game/map_manipulator.hpp>
-
+#include <game/tile_selector.hpp>
 Map::Map(Game &game, const std::string &data_string)
     : game{game}, cursor_sprite{gif_resources.get("unit_select.gif")},
       tiles{initTiles(data_string)}, width{(unsigned)tiles[0].size()}, height{(unsigned)tiles.size()}
@@ -34,15 +34,17 @@ Map::Map(Game &game, const std::string &data_string)
     // (*this)[4, 3].unit = Unit::createUnit(TCOPTER, Team::Blue);
     // (*this)[4, 4].unit = Unit::createUnit(TANK, Team::Blue);
 
-
-
     // (*this)[4, 4].unit = Unit::createUnit("Infantry", Team::Blue);
     // (*this)[5, 4].unit = Unit::createUnit("TransportCopter", Team::Red);
     // (*this)[6, 4].unit = Unit::createUnit("Infantry", Team::Red);
     // (*this)[6, 4].unit->heal(-80);
 
-    // (*this)[7, 4].unit = Unit::createUnit("Infantry", Team::Red);
-    // (*this)[7, 4].unit->heal(-80);
+    (*this)[8, 4].unit = Unit::createUnit("Infantry", Team::Blue);
+
+    (*this)[7, 4].unit = Unit::createUnit("Infantry", Team::Blue);
+    (*this)[7, 4].unit->heal(-80);
+
+    (*this)[6, 4].unit = Unit::createUnit("Infantry", Team::Red);
 }
 template <>
 void Map::displayMode<ViewMode::Shopping>(sf::RenderWindow &window)
@@ -62,9 +64,8 @@ void Map::displayMode<ViewMode::Watch>(sf::RenderWindow &window)
 }
 void Map::resize()
 {
-    pos_x = (WindowManager::window_width - scale * 16* width) / 2;
-    pos_y = (WindowManager::window_height - scale * 16* height) / 2;
-
+    pos_x = (WindowManager::window_width - scale * 16 * width) / 2;
+    pos_y = (WindowManager::window_height - scale * 16 * height) / 2;
 }
 
 template <>
@@ -85,7 +86,6 @@ void Map::displayMode<ViewMode::View>(sf::RenderWindow &window)
 
     unit_detail.setInfo((*this)[cursor]);
     unit_detail.draw(window);
-    
 }
 template <>
 void Map::displayMode<ViewMode::SelectTarget>(sf::RenderWindow &window)
@@ -155,11 +155,11 @@ void Map::win(const Team &winner_team)
 void Map::drawCursor(sf::RenderWindow &window)
 {
 
-    smooth_cursor_x += ((cursor.x * scale * tile_size) - smooth_cursor_x) * 0.03f;
-    smooth_cursor_y += ((cursor.y * scale * tile_size) - smooth_cursor_y) * 0.03f;
+    smooth_cursor_x += ((cursor.x * scale * tile_size) - smooth_cursor_x) * 10*delta_time;
+    smooth_cursor_y += ((cursor.y * scale * tile_size) - smooth_cursor_y) * 10*delta_time;
 
     cursor_sprite.setScale(scale * tile_size / cursor_sprite.getTexture()->getSize().x, scale * tile_size / cursor_sprite.getTexture()->getSize().y);
-    cursor_sprite.setPosition(smooth_x + smooth_cursor_x , smooth_y +smooth_cursor_y);
+    cursor_sprite.setPosition(smooth_x + smooth_cursor_x, smooth_y + smooth_cursor_y);
     window.draw(cursor_sprite);
 }
 
@@ -176,7 +176,8 @@ std::vector<std::vector<unsigned>> Map::getTileIds(const std::string &data_strin
         const std::string_view line{unprocessed_data.data(), std::min(line_length, unprocessed_data.size())};
 
         auto ids = getLineData(line);
-        std::ranges::transform(ids.begin(), ids.end(), ids.begin(), [&](const unsigned& x){return manipulator.getId(x);} );
+        std::ranges::transform(ids.begin(), ids.end(), ids.begin(), [&](const unsigned &x)
+                               { return manipulator.getId(x); });
 
         tile_ids.push_back(ids);
 
@@ -265,8 +266,15 @@ void Map::handleMenu()
 
 void Map::handleEvents()
 {
+    static bool show_enemy_tiles = false;
     if (WindowManager::getKeyDown(sf::Keyboard::Y))
     {
+        if(show_enemy_tiles)
+        {
+            clearTileEffects();
+            show_enemy_tiles = false;
+        }
+
         auto &tile = getCursorTile();
 
         if (!selected_unit)
@@ -278,8 +286,16 @@ void Map::handleEvents()
             }
             else if (tile.unit->getTeam() == team)
             {
+                clearTileEffects();
                 if (!tile.unit->select(*this, cursor))
                     handleMenu();
+            }
+            else
+            {
+                clearTileEffects();
+                const auto tiles = MovementSelector::getTiles(*this, cursor, *tile.unit);
+                setMovementTileMode(tiles, Tile::DisplayMode::Move);
+                show_enemy_movement = true;
             }
         }
         else
@@ -297,6 +313,13 @@ void Map::handleEvents()
     if (WindowManager::getKeyDown(sf::Keyboard::X))
     {
         clearTileEffects();
+        show_enemy_tiles = false;
+        if (!selected_unit && getCursorTile().unit && getCursorTile().unit->getTeam() != team)
+        {
+            const auto tiles = AttackableSelector::getTiles(*this, cursor, *getCursorTile().unit);
+            setMovementTileMode(tiles, Tile::DisplayMode::Attack);
+            show_enemy_tiles = true;
+        }
         selected_unit = {};
     }
 }
@@ -321,177 +344,197 @@ std::shared_ptr<Unit> Map::createUnit(const std::string &id, const Team &team_id
     return tile.unit;
 }
 
-    Tile &Map::operator[](const unsigned &x, const unsigned &y)
+Tile &Map::operator[](const unsigned &x, const unsigned &y)
+{
+    return *tiles[y][x];
+}
+
+Tile &Map::operator[](const TileIndex &index)
+{
+    return *tiles[index.y][index.x];
+}
+
+void Map::moveMapToContain(const TileIndex &index)
+{
+    const auto [x, y] = getUnsmoothScreenPosition(index);
+
+    if (x < 0)
+        pos_x -= x;
+    if (y < 0)
+        pos_y -= y;
+    if (x > WindowManager::window_width - 16 * scale)
+        pos_x += WindowManager::window_width - 16 * scale - x;
+    if (y > WindowManager::window_height - 16 * scale)
+        pos_y += WindowManager::window_height - 16 * scale - y;
+}
+
+void Map::moveCursor()
+{
+    auto &[cursor_x, cursor_y] = cursor;
+    delta_time.update();
+    bool button_was_pressed{false};
+    if (WindowManager::getKey(sf::Keyboard::Left) && !WindowManager::getKey(sf::Keyboard::Right))
     {
-        return *tiles[y][x];
+        button_was_pressed = true;
+        moveCursorInDirection(cursor_x, -1, time_since_last_left_move, width);
+    }
+    if (WindowManager::getKey(sf::Keyboard::Right) && !WindowManager::getKey(sf::Keyboard::Left))
+    {
+        button_was_pressed = true;
+        moveCursorInDirection(cursor_x, 1, time_since_last_right_move, width);
+    }
+    if (WindowManager::getKey(sf::Keyboard::Up) && !WindowManager::getKey(sf::Keyboard::Down))
+    {
+        button_was_pressed = true;
+
+        moveCursorInDirection(cursor_y, -1, time_since_last_up_move, height);
+    }
+    if (WindowManager::getKey(sf::Keyboard::Down) && !WindowManager::getKey(sf::Keyboard::Up))
+    {
+        button_was_pressed = true;
+        moveCursorInDirection(cursor_y, +1, time_since_last_down_move, height);
     }
 
-     Tile &Map::operator[](const TileIndex &index)
-    {
-        return *tiles[index.y][index.x];
-    }
+    if (!button_was_pressed)
+        time_since_movement_button_was_pressed = 0;
+    else
+        time_since_movement_button_was_pressed += delta_time;
 
-    void Map::moveMapToContain(const TileIndex &index)
-    {
-        const auto [x, y] = getUnsmoothScreenPosition(index);
+    moveMapToContain(cursor);
+}
 
-        if (x < 0)
-            pos_x -= x;
-        if (y < 0)
-            pos_y -= y;
-        if (x > WindowManager::window_width - 16 * scale)
-            pos_x += WindowManager::window_width - 16 * scale - x;
-        if (y > WindowManager::window_height - 16 * scale)
-            pos_y += WindowManager::window_height - 16 * scale - y;
-    }
-
-    void Map::moveCursor()
-    {
-        auto &[cursor_x, cursor_y] = cursor;
-        delta_time.update();
-        bool button_was_pressed{false};
-        if (WindowManager::getKey(sf::Keyboard::Left) && !WindowManager::getKey(sf::Keyboard::Right))
+bool Map::hasTeamNoUnitsLeft(const Team &team)
+{
+    for (unsigned y{0}; y < tiles.size(); y++)
+        for (unsigned x{0}; x < tiles[y].size(); x++)
         {
-            button_was_pressed = true;
-            moveCursorInDirection(cursor_x, -1, time_since_last_left_move, width);
-        }
-        if (WindowManager::getKey(sf::Keyboard::Right) && !WindowManager::getKey(sf::Keyboard::Left))
-        {
-            button_was_pressed = true;
-            moveCursorInDirection(cursor_x, 1, time_since_last_right_move, width);
-        }
-        if (WindowManager::getKey(sf::Keyboard::Up) && !WindowManager::getKey(sf::Keyboard::Down))
-        {
-            button_was_pressed = true;
-
-            moveCursorInDirection(cursor_y, -1, time_since_last_up_move, height);
-        }
-        if (WindowManager::getKey(sf::Keyboard::Down) && !WindowManager::getKey(sf::Keyboard::Up))
-        {
-            button_was_pressed = true;
-            moveCursorInDirection(cursor_y, +1, time_since_last_down_move, height);
+            const auto &tile = (*this)[{x, y}];
+            if (tile.unit && tile.unit->getTeam() == team)
+                return false;
         }
 
-        if (!button_was_pressed)
-            time_since_movement_button_was_pressed = 0;
-        else
-            time_since_movement_button_was_pressed += delta_time;
+    return true;
+}
 
-        moveMapToContain(cursor);
-    }
+void Map::killUnit(const TileIndex &position)
+{
+    const auto team = (*this)[position].unit->getTeam();
+    (*this)[position].unit = nullptr;
+    if (hasTeamNoUnitsLeft(team))
+        win(team == Red ? Blue : Red);
 
-        bool Map::hasTeamNoUnitsLeft(const Team &team)
+    animations.emplace_back(Animation{UI::GIF("misc/explosion/", "resources/images/"), 0.81, position, 4, 8});
+}
+
+void Map::clearTileEffects()
+{
+    for (unsigned y{0}; y < tiles.size(); y++)
+        for (unsigned x{0}; x < tiles[y].size(); x++)
+            (*this)[{x, y}].setDisplayMode(Tile::DisplayMode::Normal);
+}
+
+void Map::setMovementTileMode(const std::vector<TileIndex> &indices, const Tile::DisplayMode &mode)
+{
+    for (const auto &index : indices)
+        getTile(index).setDisplayMode(mode);
+}
+
+std::tuple<float, float> Map::getScreenPosition(const TileIndex &index) const
+{
+    return {index.x * 16 * scale + smooth_x, index.y * 16 * scale + smooth_y};
+}
+
+std::tuple<float, float> Map::getUnsmoothScreenPosition(const TileIndex &index) const
+{
+    return {index.x * 16 * scale + pos_x, index.y * 16 * scale + pos_y};
+}
+
+void Map::moveCursorInDirection(unsigned &cursor_var, const int delta, float &time_since_movement, const unsigned &max_value)
+{
+    constexpr float time_between_scrolls{0.1};
+    constexpr float init_scroll_wait{0.3};
+    if (time_since_movement_button_was_pressed == 0)
     {
-        for (unsigned y{0}; y < tiles.size(); y++)
-            for (unsigned x{0}; x < tiles[y].size(); x++)
-            {
-                const auto &tile = (*this)[{x, y}];
-                if (tile.unit && tile.unit->getTeam() == team)
-                    return false;
-            }
-
-        return true;
+        cursor_var = std::max(0, std::min((int)max_value - 1, (int)cursor_var + delta));
+        time_since_movement = 0;
     }
-
-
-    void Map::killUnit(const TileIndex &position)
+    else if (time_since_movement_button_was_pressed >= init_scroll_wait)
     {
-        const auto team = (*this)[position].unit->getTeam();
-        (*this)[position].unit = nullptr;
-        if (hasTeamNoUnitsLeft(team))
-            win(team == Red ? Blue : Red);
-    }
-
-
-        void Map::clearTileEffects()
-    {
-        for (unsigned y{0}; y < tiles.size(); y++)
-            for (unsigned x{0}; x < tiles[y].size(); x++)
-                (*this)[{x, y}].setDisplayMode(Tile::DisplayMode::Normal);
-    }
-
-        void Map::setMovementTileMode(const std::vector<TileIndex> &indices, const Tile::DisplayMode &mode)
-    {
-        for (const auto &index : indices)
-            getTile(index).setDisplayMode(mode);
-    }
-
-
-
-        std::tuple<float, float> Map::getScreenPosition(const TileIndex &index) const
-    {
-        return {index.x * 16 * scale + smooth_x, index.y * 16 * scale + smooth_y};
-    }
-
-    std::tuple<float, float> Map::getUnsmoothScreenPosition(const TileIndex &index) const
-    {
-        return {index.x * 16 * scale + pos_x, index.y * 16 * scale + pos_y};
-    }
-
-    void Map::moveCursorInDirection(unsigned &cursor_var, const int delta, float &time_since_movement, const unsigned &max_value)
-    {
-        constexpr float time_between_scrolls{0.1};
-        constexpr float init_scroll_wait{0.3};
-        if (time_since_movement_button_was_pressed == 0)
+        if (time_since_movement > time_between_scrolls)
         {
             cursor_var = std::max(0, std::min((int)max_value - 1, (int)cursor_var + delta));
             time_since_movement = 0;
         }
-        else if (time_since_movement_button_was_pressed >= init_scroll_wait)
+        else
         {
-            if (time_since_movement > time_between_scrolls)
-            {
-                cursor_var = std::max(0, std::min((int)max_value - 1, (int)cursor_var + delta));
-                time_since_movement = 0;
-            }
-            else
-            {
-                time_since_movement += delta_time;
-            }
+            time_since_movement += delta_time;
         }
     }
+}
 
+void Map::drawMap(sf::RenderWindow &window)
+{
+    smooth_x += (pos_x - smooth_x) * 10*delta_time;
+    smooth_y += (pos_y - smooth_y) * 10*delta_time;
 
-    void Map::drawMap(sf::RenderWindow &window)
+    for (unsigned y{0}; y < height; y++)
+        for (unsigned x{0}; x < width; x++)
+            (*this)[{x, y}].display(window, *this, {x, y});
+
+    for (unsigned y{0}; y < height; y++)
+        for (unsigned x{0}; x < width; x++)
+        {
+            auto unit = (*this)[{x, y}].unit; // create copy of shared pointer if unit is killed while displaying
+            if(unit)
+                unit->display(window, *this, {x, y});
+        }
+
+    drawAnimations(window);
+}
+
+void Map::beginTurn(const Team &begin_turn_team)
+{
+    (void)begin_turn_team;
+    for (unsigned y{0}; y < height; y++)
+        for (unsigned x{0}; x < width; x++)
+        {
+            auto &tile = (*this)[{x, y}];
+            tile.startRound(*this, {x, y});
+
+            if (tile.unit)
+                tile.unit->startRound(*this, {x, y});
+        }
+}
+
+std::vector<TileIndex> Map::getNeighbors(const TileIndex &index)
+{
+    std::vector<TileIndex> ret;
+
+    if (index.x > 0)
+        ret.push_back({index.x - 1, index.y});
+    if (index.x < width - 1)
+        ret.push_back({index.x + 1, index.y});
+    if (index.y > 0)
+        ret.push_back({index.x, index.y - 1});
+    if (index.y < height - 1)
+        ret.push_back({index.x, index.y + 1});
+
+    return ret;
+}
+
+void Map::drawAnimations(sf::RenderWindow &window)
+{
+    if (animations.empty())
+        return;
+    auto it = animations.begin();
+
+    while (it != animations.end())
     {
-        smooth_x += (pos_x - smooth_x) *0.03f;
-        smooth_y += (pos_y - smooth_y) *0.03f;
+        auto next = it;
+        next++;
+        if (!it->draw(window, *this))
+            animations.erase(it);
 
-        for (unsigned y{0}; y < height; y++)
-            for (unsigned x{0}; x < width; x++)
-                (*this)[{x, y}].display(window, *this, {x, y});
-
-        for (unsigned y{0}; y < height; y++)
-            for (unsigned x{0}; x < width; x++)
-                (*this)[{x, y}].displayUnit(window, *this, {x, y});
+        it = next;
     }
-
-    void Map::beginTurn(const Team &begin_turn_team)
-    {
-        (void)begin_turn_team;
-        for (unsigned y{0}; y < height; y++)
-            for (unsigned x{0}; x < width; x++)
-            {
-                auto &tile = (*this)[{x, y}];
-                tile.startRound(*this, {x, y});
-
-                if (tile.unit)
-                    tile.unit->startRound(*this, {x, y});
-            }
-    }
-
-    std::vector<TileIndex> Map::getNeighbors(const TileIndex &index)
-    {
-        std::vector<TileIndex> ret;
-
-        if (index.x > 0)
-            ret.push_back({index.x - 1, index.y});
-        if (index.x < width - 1)
-            ret.push_back({index.x + 1, index.y});
-        if (index.y > 0)
-            ret.push_back({index.x, index.y - 1});
-        if (index.y < height - 1)
-            ret.push_back({index.x, index.y + 1});
-
-        return ret;
-    }
+}

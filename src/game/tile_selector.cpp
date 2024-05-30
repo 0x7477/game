@@ -2,6 +2,7 @@
 #include <game/unit.hpp>
 #include <game/map.hpp>
 #include <game/attack_simulator.hpp>
+#include <set>
 
 void MovementSelector::fill(Map &map, const TileIndex &index, const int &remaining_movement_speed, const Unit &unit, std::vector<TileIndex> &tile_indices, std::map<TileIndex, std::tuple<int, TileIndex>> &discovered_movement_costs, const TileIndex &last_index)
 {
@@ -52,7 +53,6 @@ std::optional<std::vector<TileIndex>> MovementSelector::getPath(Map &map, const 
 
     if (!discovered_movement_costs.contains(end))
         return {};
-    
 
     path.clear();
 
@@ -81,7 +81,7 @@ std::vector<TileIndex> AttackSelector::getTiles(Map &map, const TileIndex &tile_
             if (abs_distance < minimum_range || abs_distance > maximum_range)
                 continue;
 
-            if(map[x, y].isAttackable(map, {x,y}, unit))
+            if (map[x, y].isAttackable(map, {x, y}, unit))
                 tiles.push_back({x, y});
 
             if (!map[x, y].unit)
@@ -116,4 +116,28 @@ std::vector<TileIndex> UnloadSelector::getTiles(Map &map, const TileIndex &tile_
     }
 
     return tiles;
+}
+
+std::vector<TileIndex> AttackableSelector::getTiles(Map &map, const TileIndex &tile_index, const Unit &unit)
+{
+    std::set<TileIndex> indices;
+    const auto moveable_tiles = MovementSelector::getTiles(map, tile_index, unit);
+    for (const auto &tile : moveable_tiles)
+    {
+        const auto maximum_range = unit.stats.attack_range_max;
+        const auto minimum_range = unit.stats.attack_range_min;
+        for (unsigned y = std::min(0u, tile.y - maximum_range); y < std::max(map.height, tile.y + maximum_range); y++)
+        {
+            for (unsigned x = std::min(0u, tile.x - maximum_range); x < std::max(map.width, tile.x + maximum_range); x++)
+            {
+                const unsigned abs_distance = abs((int)x - (int)tile.x) + abs((int)y - (int)tile.y);
+                if (abs_distance < minimum_range || abs_distance > maximum_range)
+                    continue;
+
+                indices.emplace(TileIndex{x, y});
+            }
+        }
+    }
+
+    return {indices.begin(), indices.end()};
 }

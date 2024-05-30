@@ -3,7 +3,7 @@
 #include <game/game.hpp>
 #include <game/player.hpp>
 
-void Tile::display(sf::RenderWindow &window, const Map &map, const TileIndex &index)
+void Tile::display(sf::RenderWindow &window, Map &map, const TileIndex &index)
 {
     const auto [x, y] = map.getScreenPosition(index);
 
@@ -22,12 +22,6 @@ void Tile::display(sf::RenderWindow &window, const Map &map, const TileIndex &in
         attack_effect.display(window, x, y, map.scale);
 
     // window.draw();
-}
-
-void Tile::displayUnit(sf::RenderWindow &window, const Map &map, const TileIndex &index)
-{
-    if (unit)
-        unit->display(window, map, index);
 }
 
 void RepairUnits::handleStartOfTurn(Map &map, const TileIndex &tile_index)

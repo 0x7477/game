@@ -17,6 +17,10 @@
 #include <ui/endcard.hpp>
 #include <ui/unit_detail.hpp>
 #include <ui/header.hpp>
+#include <list>
+#include <game/animation.hpp>
+#include <helper/delta_timer.hpp>
+
 class Game;
 
 class Map
@@ -53,6 +57,7 @@ public:
     void beginTurn(const Team &begin_turn_team);
 
     void drawMap(sf::RenderWindow &window);
+    void drawAnimations(sf::RenderWindow &window);
 
     void moveCursorInDirection(unsigned &cursor_var, const int delta, float &time_since_movement, const unsigned &max_value);
 
@@ -113,4 +118,6 @@ public:
     UI::Header header;
     ViewMode mode{View};
     DeltaTimer delta_time{};
+
+    std::list<Animation> animations;
 };
