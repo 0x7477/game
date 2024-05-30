@@ -22,7 +22,7 @@ void tupleToArgsHelper(const Tuple &t, Func &&f)
 
 void construct(const network::Datagram<unsigned int, unsigned int, network::RPCTarget> &tuple);
 
-network::RPC<network::Datagram<unsigned int, unsigned int, network::RPCTarget>, [](const auto &tuple)
+inline network::RPC<network::Datagram<unsigned int, unsigned int, network::RPCTarget>, [](const auto &tuple)
                    { construct(tuple); }>
     synced_constructor{"synced_constructor"};
 

@@ -1,5 +1,4 @@
 #pragma once
-#include <engine/synced.hpp>
 #include <game/player.hpp>
 #include <network/network_manager.hpp>
 #include <SFML/Graphics.hpp>

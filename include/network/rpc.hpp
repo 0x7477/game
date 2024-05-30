@@ -60,6 +60,7 @@ namespace network
             id_translator[getID()] = hash(id);
             rpcs[hash(id)] = this;
 
+            std::cout << "rpc: " << id << " " << hash(id) << std::endl;
             if constexpr (!std::is_same<response, void>::value)
                 new response(id+"i");
         }
@@ -117,6 +118,7 @@ namespace network
             header->message_length = message_size;
             header->rpc_id = id_translator[getID()];
             header->target = target;
+            std::cout << "sending" << header->rpc_id << std::endl;
 
             std::memcpy(header + 1, data.data(), data.size());
             return std::string(message.data(), message_size);
