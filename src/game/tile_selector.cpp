@@ -75,7 +75,7 @@ std::vector<TileIndex> AttackSelector::getTiles(Map &map, const TileIndex &tile_
 
     for (unsigned y = std::max(0u, tile_index.y - maximum_range); y <= std::min(map.height - 1, tile_index.y + maximum_range); y++)
     {
-        for (unsigned x = std::max(0u, tile_index.x - maximum_range); x= < std::min(map.width - 1, tile_index.x + maximum_range); x++)
+        for (unsigned x = std::max(0u, tile_index.x - maximum_range); x<= std::min(map.width - 1, tile_index.x + maximum_range); x++)
         {
             const unsigned abs_distance = abs((int)x - (int)tile_index.x) + abs((int)y - (int)tile_index.y);
             if (abs_distance < minimum_range || abs_distance > maximum_range)
