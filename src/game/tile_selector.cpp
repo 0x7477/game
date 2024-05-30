@@ -126,9 +126,9 @@ std::vector<TileIndex> AttackableSelector::getTiles(Map &map, const TileIndex &t
     {
         const auto maximum_range = unit.stats.attack_range_max;
         const auto minimum_range = unit.stats.attack_range_min;
-        for (unsigned y = std::min(0u, tile.y - maximum_range); y < std::max(map.height, tile.y + maximum_range); y++)
+        for (unsigned y = std::min(0u, tile.y - maximum_range); y < std::max(map.height-1, tile.y + maximum_range); y++)
         {
-            for (unsigned x = std::min(0u, tile.x - maximum_range); x < std::max(map.width, tile.x + maximum_range); x++)
+            for (unsigned x = std::min(0u, tile.x - maximum_range); x < std::max(map.width-1, tile.x + maximum_range); x++)
             {
                 const unsigned abs_distance = abs((int)x - (int)tile.x) + abs((int)y - (int)tile.y);
                 if (abs_distance < minimum_range || abs_distance > maximum_range)
