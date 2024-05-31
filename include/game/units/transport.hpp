@@ -34,9 +34,12 @@ namespace Units
             {
                 Transport<capacity> *other = (Transport<capacity> *)&unit;
 
-                std::cout << loaded_count << " " << other->loaded_count << capacity << "\n";
+                std::cout <<"loaded_count "<< loaded_count << " "<<"other->loaded_count " << other->loaded_count<< "capacity: " << capacity << "\n";
                 if (loaded_count + other->loaded_count > capacity) // cant load any further
+                {
+                    std::cout << "capacity too low\n";
                     return false;
+                }
             }
 
             return isUnitLoadable(unit); // can load if id matches
