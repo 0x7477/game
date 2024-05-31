@@ -33,6 +33,8 @@ namespace Units
             if (unit.id == id)
             {
                 Transport<capacity> *other = (Transport<capacity> *)&unit;
+
+                std:::cout << loaded_count << " " << other->loaded_count << capacity << "\n";
                 if (loaded_count + other->loaded_count > capacity) // cant load any further
                     return false;
             }
@@ -44,11 +46,21 @@ namespace Units
         {
             if (map[unit].unit->id == id)
             {
+                std::cout << "Join\n";
                 Transport<capacity> *other = (Transport<capacity> *)map[unit].unit.get();
+
+                std::cout << "other->loaded_count "<<other->loaded_count<<" \n";
+                std::cout << "loaded_count "<<loaded_count<<" \n";
+
                 if (other->loaded_count > 0)
                 {
                     loaded_units = other->loaded_units;
                     loaded_count = other->loaded_count;
+                }
+                else
+                {
+                    other->loaded_units = loaded_units;
+                    other->loaded_count = loaded_count;
                 }
 
                 executeJoinAction(map, unit, me);
@@ -140,7 +152,7 @@ namespace Units
             // if (join_action_option)
             //     actions.push_back(*join_action_option);
 
-            if (map[target].unit == nullptr)
+            if (map[target].unit == nullptr || target == me)
             {
                 for (const auto &unit : loaded_units)
                 {
