@@ -34,7 +34,7 @@ namespace Units
             {
                 Transport<capacity> *other = (Transport<capacity> *)&unit;
 
-                std:::cout << loaded_count << " " << other->loaded_count << capacity << "\n";
+                std::cout << loaded_count << " " << other->loaded_count << capacity << "\n";
                 if (loaded_count + other->loaded_count > capacity) // cant load any further
                     return false;
             }
