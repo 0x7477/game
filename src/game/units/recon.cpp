@@ -6,7 +6,7 @@ namespace Units
 
     public:
         Recon(const Team &team)
-            : Unit{team, {8,Tires,0}}
+            : Unit{team, {8,Treads,0}}
         {}
     };
 }
