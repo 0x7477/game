@@ -332,6 +332,7 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
 
 void Unit::executeJoinAction(Map &map, const TileIndex &from, const TileIndex &to)
 {
+    std::cout << "executeJoinAction basic\n";
     const int health = map[from].unit->getUnitCount();
     const int missing_health = 10 - map[to].unit->getUnitCount();
     const int healing = std::min(health, missing_health);
@@ -350,6 +351,8 @@ std::optional<Unit::Action> Unit::getJoinAction(Map &map, const TileIndex &me, c
     if (!map[target].unit)
         return {};
     if (map[target].unit->getUnitCount() == 10)
+        return {};
+    if (map[me].unit->id != map[target].unit->id )
         return {};
 
     return Action{.name = "Join", .execute = [&map, me, target, this](const unsigned &)

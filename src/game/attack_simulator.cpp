@@ -73,7 +73,6 @@ bool AttackSimulator::canDefenderCounterattack(Map &map, const TileIndex &attack
     const auto &defender = map[defender_index].unit;
 
     const auto defender_died = defender->health < (int)damage_done;
-    std::cout << defender->health << " " << damage_done << "\n";
 
     if (defender_died)
         return false;

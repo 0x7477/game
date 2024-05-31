@@ -60,7 +60,7 @@ namespace network
             id_translator[getID()] = hash(id);
             rpcs[hash(id)] = this;
 
-            std::cout << "rpc: " << id << " " << hash(id) << std::endl;
+            // std::cout << "rpc: " << id << " " << hash(id) << std::endl;
             if constexpr (!std::is_same<response, void>::value)
                 new response(id+"_");
         }

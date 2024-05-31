@@ -15,6 +15,8 @@ namespace Units
         {
             actions[Unload] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target, const unsigned &index)
             { this->executeUnloadAction(map, me, new_position, target, index); };
+            actions[Join] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &, const unsigned &)
+            { this->executeTransportJoinAction(map, me, new_position); };
         }
 
         bool isUnitLoadable(const Unit &unit)
@@ -33,43 +35,26 @@ namespace Units
             if (unit.id == id)
             {
                 Transport<capacity> *other = (Transport<capacity> *)&unit;
-
-                std::cout <<"loaded_count "<< loaded_count << " "<<"other->loaded_count " << other->loaded_count<< "capacity: " << capacity << "\n";
-                if (loaded_count + other->loaded_count > capacity) // cant load any further
-                {
-                    std::cout << "capacity too low\n";
-                    return false;
-                }
+                return loaded_count + other->loaded_count <= capacity;
             }
 
             return isUnitLoadable(unit); // can load if id matches
         }
 
+        void executeTransportJoinAction(Map &map, const TileIndex &unit, const TileIndex &me)
+        {
+            Transport<capacity> *me_ptr = (Transport<capacity> *)map[me].unit.get();
+
+            if (loaded_count > 0)
+            {
+                me_ptr->loaded_units = loaded_units;
+                me_ptr->loaded_count = loaded_count;
+            }
+            executeJoinAction(map, unit, me);
+        }
+
         virtual void executeUnitInteraction(Map &map, const TileIndex &unit, const TileIndex &me) override
         {
-            if (map[unit].unit->id == id)
-            {
-                std::cout << "Join\n";
-                Transport<capacity> *other = (Transport<capacity> *)map[unit].unit.get();
-
-                std::cout << "other->loaded_count "<<other->loaded_count<<" \n";
-                std::cout << "loaded_count "<<loaded_count<<" \n";
-
-                if (other->loaded_count > 0)
-                {
-                    loaded_units = other->loaded_units;
-                    loaded_count = other->loaded_count;
-                }
-                else
-                {
-                    other->loaded_units = loaded_units;
-                    other->loaded_count = loaded_count;
-                }
-
-                executeJoinAction(map, unit, me);
-                return;
-            }
-
             // load the unit
             loaded_units[loaded_count] = map[unit].unit;
             loaded_count++;
@@ -151,10 +136,6 @@ namespace Units
 
             std::vector<Action> actions{};
 
-            // const auto join_action_option = getJoinAction(map, me, target);
-            // if (join_action_option)
-            //     actions.push_back(*join_action_option);
-
             if (map[target].unit == nullptr || target == me)
             {
                 for (const auto &unit : loaded_units)
@@ -183,9 +164,17 @@ namespace Units
                                                        //    loaded_unit->endTurn(map);
                                                    }});
 
-            const auto possible_join_action = getJoinAction(map, unit, me);
+            auto possible_join_action = getJoinAction(map, unit, me);
             if (possible_join_action)
+            {
+                (*possible_join_action).execute = [&map, unit, me, this](const unsigned &)
+                {
+                    std::cout << "transport join" << "\n";
+                    map.game.sendAction(Join, map[unit].unit->movement_manager.getPath(), me);
+                    ((Transport<capacity> *)map[unit].unit.get())->executeTransportJoinAction(map, unit, me);
+                };
                 actions.push_back(*possible_join_action);
+            }
 
             return actions;
         }
