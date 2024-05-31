@@ -10,8 +10,8 @@ namespace Units
     {
 
     public:
-        Transport(const Team &team, const Stats &stats, const std::vector<std::string>& loadable_units, const std::source_location &location = std::source_location::current())
-            : Unit{team, stats, location}, loadable_units{loadable_units},star{image_resources.get("misc/star.png")}
+        Transport(const Team &team, const Stats &stats, const std::vector<std::string> &loadable_units, const std::source_location &location = std::source_location::current())
+            : Unit{team, stats, location}, loadable_units{loadable_units}, star{image_resources.get("misc/star.png")}
         {
             actions[Unload] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &target, const unsigned &index)
             { this->executeUnloadAction(map, me, new_position, target, index); };
@@ -128,14 +128,17 @@ namespace Units
             if (join_action_option)
                 actions.push_back(*join_action_option);
 
-            for (const auto &unit : loaded_units)
+            if (map[target].unit == nullptr)
             {
-                if (!unit)
-                    continue;
-                actions.push_back({.name = unit->id, .execute = [&map, this, me, target](const unsigned &index)
-                                                     {
-                                                         unloadUnit(map, me, target, index);
-                                                     }});
+                for (const auto &unit : loaded_units)
+                {
+                    if (!unit)
+                        continue;
+                    actions.push_back({.name = unit->id, .execute = [&map, this, me, target](const unsigned &index)
+                                                         {
+                                                             unloadUnit(map, me, target, index);
+                                                         }});
+                }
             }
             return actions;
         }
@@ -160,13 +163,13 @@ namespace Units
             return actions;
         }
 
-virtual void displayAdditions(sf::RenderWindow &window, Map &map, const TileIndex &index) override
+        virtual void displayAdditions(sf::RenderWindow &window, Map &map, const TileIndex &index) override
         {
-            if (loaded_count==  0)
+            if (loaded_count == 0)
                 return;
 
-            star.setScale(map.scale * 0.3, map.scale* 0.3);
-            star.setOrigin(0,-15);
+            star.setScale(map.scale * 0.3, map.scale * 0.3);
+            star.setOrigin(0, -15);
 
             const auto [x, y] = map.getScreenPosition(index);
             star.setPosition(x, y);
