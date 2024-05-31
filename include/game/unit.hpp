@@ -120,6 +120,7 @@ public:
     void setFinished(const bool &finished = true) { status.finished = finished; }
 
     unsigned getUnitCount() const;
+    unsigned getHealth() const;
 
     void updateCursor(Map &map, const TileIndex &cursor);
     std::string id;
@@ -129,7 +130,7 @@ public:
 
     void endTurn(Map &map, const bool &finished = true);
 
-    bool isRangedUnit();
+    bool isRangedUnit() const;
 
 public:
     Stats stats;

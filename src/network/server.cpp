@@ -5,6 +5,9 @@ network::Server::Server(const std::string &ip, const unsigned int &port)
 {
     uv_tcp_init(loop, server.get());
     server->data = this;
+
+    uv_async_init(loop, &async, sendMessageCallback);
+    async.data = this;
 }
 
 void network::Server::start()
@@ -30,6 +33,29 @@ void network::Server::start()
     }
 
     std::cout << "Server listening on " << ip << ":" << port << std::endl;
+}
+
+void network::Server::sendMessageCallback(uv_async_t *handle)
+{
+    Server *server = (Server *)handle->data;
+    while (server->send_queue.size() > 0)
+    {
+        const auto [message, client] = server->send_queue.front();
+
+        uv_buf_t buf = uv_buf_init(const_cast<char *>(message.data()), message.size());
+        uv_write_t *writeReq = new uv_write_t;
+
+        RPCPacketHeader *header = (RPCPacketHeader *)message.data();
+        std::cout << "send " << header->rpc_id << "\n";
+
+        uv_write(writeReq, client, &buf, 1, [](uv_write_t *req, int status)
+                 {
+            if (status < 0) {
+                std::cerr << "Write error: " << uv_strerror(status) << std::endl;
+            }
+            delete req; });
+        server->send_queue.pop();
+    }
 }
 
 void network::Server::receivePacket(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf)
@@ -72,21 +98,14 @@ void network::Server::onConnection(uv_stream_t *server)
         uv_close(reinterpret_cast<uv_handle_t *>(client), [](uv_handle_t *handle)
                  { 
                             std::cout << "delete handle\n";
-                            delete[] handle; 
-                });
+                            delete[] handle; });
     }
 }
 
 void network::Server::sendTo(const std::string_view &message, uv_stream_t *client)
 {
-    uv_buf_t buf = uv_buf_init(const_cast<char *>(message.data()), message.size());
-    uv_write_t *writeReq = new uv_write_t;
-    uv_write(writeReq, client, &buf, 1, [](uv_write_t *req, int status)
-             {
-            if (status < 0) {
-                std::cerr << "Write error: " << uv_strerror(status) << std::endl;
-            }
-            delete req; });
+    send_queue.emplace(std::string{message.begin(), message.end()}, client);
+    uv_async_send(&async);
 }
 
 void network::Server::runEventLoop()

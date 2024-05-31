@@ -26,7 +26,7 @@ namespace Scene
         virtual void run() override;
 
         void setLobbyId(const network::Datagram<std::string>& id);
-        std::string getRandomPlayerName();
+        std::string getPlayerName();
 
         void notifyPlayerJoined(const LobbyMember &member);
         void drawLobby();

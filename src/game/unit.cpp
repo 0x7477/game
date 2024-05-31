@@ -154,7 +154,7 @@ std::vector<Unit::Action> Unit::handlePossibleActions(Map &, const TileIndex &, 
     return {};
 }
 
-bool Unit::isRangedUnit()
+bool Unit::isRangedUnit() const
 {
     return stats.attack_range_min > 1;
 }
@@ -366,6 +366,13 @@ unsigned Unit::getUnitCount() const
     if (health < 0)
         return 0;
     return (health + 9) / 10;
+}
+
+unsigned Unit::getHealth() const
+{
+    if (health < 0)
+        return 0;
+    return health;
 }
 
 void Unit::endTurn(Map &map, const bool &set_finished)

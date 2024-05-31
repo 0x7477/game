@@ -133,6 +133,7 @@ void network::NetworkManager::executeRPCs()
                 break;
 
             const RPCPacketHeader *header = (RPCPacketHeader *)((*message).data());
+            std::cout << "recieved: "<< header->rpc_id << std::endl;
             const std::string_view view{(*message).data() + sizeof(RPCPacketHeader), (*message).size() - sizeof(RPCPacketHeader)};
 
             if (isClient() || (isServer() && header->target & RPCTargets::Server))

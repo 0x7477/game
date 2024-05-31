@@ -9,7 +9,6 @@
 #include <cassert>
 #include <engine/window_manager.hpp>
 #include <helper/delta_timer.hpp>
-#include <game/unit.hpp>
 #include <ui/shopping_menu.hpp>
 #include <ui/action_menu.hpp>
 #include <game/visualization_mode.hpp>
@@ -20,8 +19,10 @@
 #include <list>
 #include <game/animation.hpp>
 #include <helper/delta_timer.hpp>
+#include <ui/attack_info.hpp>
 
 class Game;
+class Unit;
 
 class Map
 {
@@ -116,6 +117,7 @@ public:
     UI::EndCard endcard;
     UI::UnitDetail unit_detail;
     UI::Header header;
+    UI::AttackInfo attack_info;
     ViewMode mode{View};
     DeltaTimer delta_time{};
 

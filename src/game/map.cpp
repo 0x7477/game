@@ -39,12 +39,12 @@ Map::Map(Game &game, const std::string &data_string)
     // (*this)[6, 4].unit = Unit::createUnit("Infantry", Team::Red);
     // (*this)[6, 4].unit->heal(-80);
 
-    (*this)[8, 4].unit = Unit::createUnit("Infantry", Team::Blue);
+    // (*this)[8, 4].unit = Unit::createUnit("Infantry", Team::Blue);
 
-    (*this)[7, 4].unit = Unit::createUnit("Infantry", Team::Blue);
-    (*this)[7, 4].unit->heal(-80);
-
-    (*this)[6, 4].unit = Unit::createUnit("Infantry", Team::Red);
+    // (*this)[5, 0].unit = Unit::createUnit("Rocket", Team::Blue);
+    // (*this)[6, 0].unit = Unit::createUnit("Infantry", Team::Red);
+    // (*this)[7, 0].unit = Unit::createUnit("Infantry", Team::Blue);
+    // (*this)[6, 1].unit = Unit::createUnit("Tank", Team::Blue);
 }
 template <>
 void Map::displayMode<ViewMode::Shopping>(sf::RenderWindow &window)
@@ -82,6 +82,7 @@ void Map::displayMode<ViewMode::View>(sf::RenderWindow &window)
 
     header.setMoney(game.players[game.current_active_player].money);
     header.setName(game.players[game.current_active_player].name);
+
     header.draw(window);
 
     unit_detail.setInfo((*this)[cursor]);
@@ -93,6 +94,9 @@ void Map::displayMode<ViewMode::SelectTarget>(sf::RenderWindow &window)
     drawMap(window);
     moveCursor();
     drawCursor(window);
+
+    attack_info.update(*this, cursor);
+    attack_info.draw(window);
 
     if (WindowManager::getKeyDown(sf::Keyboard::Y))
     {
@@ -155,8 +159,8 @@ void Map::win(const Team &winner_team)
 void Map::drawCursor(sf::RenderWindow &window)
 {
 
-    smooth_cursor_x += ((cursor.x * scale * tile_size) - smooth_cursor_x) * 10*delta_time;
-    smooth_cursor_y += ((cursor.y * scale * tile_size) - smooth_cursor_y) * 10*delta_time;
+    smooth_cursor_x += ((cursor.x * scale * tile_size) - smooth_cursor_x) * 10 * delta_time;
+    smooth_cursor_y += ((cursor.y * scale * tile_size) - smooth_cursor_y) * 10 * delta_time;
 
     cursor_sprite.setScale(scale * tile_size / cursor_sprite.getTexture()->getSize().x, scale * tile_size / cursor_sprite.getTexture()->getSize().y);
     cursor_sprite.setPosition(smooth_x + smooth_cursor_x, smooth_y + smooth_cursor_y);
@@ -269,7 +273,7 @@ void Map::handleEvents()
     static bool show_enemy_tiles = false;
     if (WindowManager::getKeyDown(sf::Keyboard::Y))
     {
-        if(show_enemy_tiles)
+        if (show_enemy_tiles)
         {
             clearTileEffects();
             show_enemy_tiles = false;
@@ -314,7 +318,7 @@ void Map::handleEvents()
     {
         clearTileEffects();
         show_enemy_tiles = false;
-        if (!selected_unit && getCursorTile().unit && getCursorTile().unit->getTeam() != team)
+        if (!selected_unit && getCursorTile().unit)
         {
             const auto tiles = AttackableSelector::getTiles(*this, cursor, *getCursorTile().unit);
             setMovementTileMode(tiles, Tile::DisplayMode::Attack);
@@ -474,8 +478,8 @@ void Map::moveCursorInDirection(unsigned &cursor_var, const int delta, float &ti
 
 void Map::drawMap(sf::RenderWindow &window)
 {
-    smooth_x += (pos_x - smooth_x) * 10*delta_time;
-    smooth_y += (pos_y - smooth_y) * 10*delta_time;
+    smooth_x += (pos_x - smooth_x) * 10 * delta_time;
+    smooth_y += (pos_y - smooth_y) * 10 * delta_time;
 
     for (unsigned y{0}; y < height; y++)
         for (unsigned x{0}; x < width; x++)
@@ -485,7 +489,7 @@ void Map::drawMap(sf::RenderWindow &window)
         for (unsigned x{0}; x < width; x++)
         {
             auto unit = (*this)[{x, y}].unit; // create copy of shared pointer if unit is killed while displaying
-            if(unit)
+            if (unit)
                 unit->display(window, *this, {x, y});
         }
 

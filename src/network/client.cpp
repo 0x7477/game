@@ -44,6 +44,8 @@ void network::Client::sendTo(const std::string_view &message, uv_stream_t *)
 }
 void network::Client::send(const std::string_view &message)
 {
+    RPCPacketHeader* header = (RPCPacketHeader*)message.data();
+    std::cout << "send " << header->rpc_id << "\n";
     uv_buf_t buf = uv_buf_init(const_cast<char *>(message.data()), message.size());
     uv_write_t *writeReq = new uv_write_t;
 

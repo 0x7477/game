@@ -10,8 +10,8 @@ class LobbyMember
 public:
     LobbyMember() = default;
     LobbyMember(const LobbyMember &member) = default;
-    LobbyMember(const std::string &name, const unsigned &id)
-        : name{name}, network_id{id}
+    LobbyMember(const std::string &name, const unsigned &id, const Team &team)
+        : name{name}, network_id{id}, team{team}
     {
     }
 
@@ -63,8 +63,8 @@ public:
 
     bool areAllMembersReady()
     {
-        for(const auto& [_, member]: players)
-            if(!member.ready)
+        for (const auto &[_, member] : players)
+            if (!member.ready)
                 return false;
 
         return true;

@@ -4,7 +4,7 @@
 #include <game/lobby.hpp>
 #include <random>
 #include <array>
-
+#include <unistd.h>
 std::string generateRandomId()
 {
     const std::string charset = "0123456789";
@@ -18,10 +18,9 @@ std::string generateRandomId()
     return randomId;
 }
 
-std::string Scene::Lobby::getRandomPlayerName()
+std::string Scene::Lobby::getPlayerName()
 {
-    std::array<std::string, 4> names{"Karl", "Peter", "Katha", "Vero"};
-    return names[network_manager.getID() % names.size()];
+    return getlogin();
 }
 
 network::RPC<network::Datagram<LobbyMember>, [](const auto &data)
@@ -67,9 +66,8 @@ network::RPC<network::Datagram<std::string, LobbyMember>, [](const auto &data)
                  if (!lobbies.contains(game_id))
                      return network::Datagram<bool, std::vector<LobbyMember>>{false, {}};
 
-                if (lobbies[game_id].getNumberOfPlayers() >= 2) 
+                 if (lobbies[game_id].getNumberOfPlayers() >= 2)
                      return network::Datagram<bool, std::vector<LobbyMember>>{false, {}};
-
 
                  lobbies[game_id].addPlayer(lobby_member);
 
@@ -99,7 +97,7 @@ network::RPC<network::Datagram<std::string, LobbyMember>, [](const auto &data)
                           }>>
     join_game{"join_game"};
 
-Scene::Lobby::Lobby(WindowManager &window_manager, network::NetworkManager &network_manager, Battle& battle)
+Scene::Lobby::Lobby(WindowManager &window_manager, network::NetworkManager &network_manager, Battle &battle)
     : Scene{"lobby", window_manager},
       network_manager{network_manager},
       battle{battle},
@@ -120,10 +118,11 @@ void Scene::Lobby::setReady(const unsigned &id)
 {
     lobby.players[id].ready = true;
 
-    if(lobby.areAllMembersReady())
+    if (lobby.areAllMembersReady())
     {
         battle.game.commitLobby(lobby);
-        setScene("map");      
+        battle.game.map.beginTurn(Team::Red);
+        setScene("map");
     }
 }
 
@@ -153,7 +152,7 @@ void Scene::Lobby::setLobbyId(const network::Datagram<std::string> &data)
     joined = true;
     battle.game.map.team = Team::Red;
 
-    lobby.addPlayer({username, network_manager.getID()});
+    lobby.addPlayer({username, network_manager.getID(), Team::Red});
 }
 
 void Scene::Lobby::drawLobby()
@@ -184,7 +183,7 @@ void Scene::Lobby::joinGame()
         return;
     const auto game_id = lobby_id_input.getValue();
     std::cout << "try to join " << game_id << "\n";
-    network_manager.send(join_game, network::RPCTargets::Server, {game_id, LobbyMember{username,network_manager.getID()}});
+    network_manager.send(join_game, network::RPCTargets::Server, {game_id, LobbyMember{username, network_manager.getID(), Team::Blue}});
 }
 
 void Scene::Lobby::promptCode()
@@ -208,7 +207,7 @@ void Scene::Lobby::promptCode()
 void Scene::Lobby::run()
 {
     if (username == "")
-        username = getRandomPlayerName();
+        username = getPlayerName();
 
     if (joined)
     {
@@ -218,7 +217,7 @@ void Scene::Lobby::run()
 
     if (mode == Create && !connecting)
     {
-        network_manager.send(create_game, network::RPCTargets::Server, {LobbyMember{getRandomPlayerName(), network_manager.getID()}});
+        network_manager.send(create_game, network::RPCTargets::Server, {LobbyMember{getPlayerName(), network_manager.getID(), Team::Red}});
         connecting = true;
         return;
     }

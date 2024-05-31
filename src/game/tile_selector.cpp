@@ -73,9 +73,9 @@ std::vector<TileIndex> AttackSelector::getTiles(Map &map, const TileIndex &tile_
 {
     std::vector<TileIndex> tiles{};
 
-    for (unsigned y = std::max(0u, tile_index.y - maximum_range); y <= std::min(map.height, tile_index.y + maximum_range); y++)
+    for (unsigned y = std::max(0, (int)tile_index.y - (int)maximum_range); y <= std::min(map.height-1, tile_index.y + maximum_range); y++)
     {
-        for (unsigned x = std::max(0u, tile_index.x - maximum_range); x<= std::min(map.width, tile_index.x + maximum_range); x++)
+        for (unsigned x = std::max(0, (int)tile_index.x -(int) maximum_range); x<= std::min(map.width-1, tile_index.x + maximum_range); x++)
         {
             const unsigned abs_distance = abs((int)x - (int)tile_index.x) + abs((int)y - (int)tile_index.y);
             if (abs_distance < minimum_range || abs_distance > maximum_range)
@@ -121,14 +121,16 @@ std::vector<TileIndex> UnloadSelector::getTiles(Map &map, const TileIndex &tile_
 std::vector<TileIndex> AttackableSelector::getTiles(Map &map, const TileIndex &tile_index, const Unit &unit)
 {
     std::set<TileIndex> indices;
-    const auto moveable_tiles = MovementSelector::getTiles(map, tile_index, unit);
+
+    
+    const auto moveable_tiles = unit.isRangedUnit()? std::vector{tile_index} : MovementSelector::getTiles(map, tile_index, unit);
     for (const auto &tile : moveable_tiles)
     {
         const auto maximum_range = unit.stats.attack_range_max;
         const auto minimum_range = unit.stats.attack_range_min;
-        for (unsigned y = std::max(0u, tile.y - maximum_range); y <= std::min(map.height - 1, tile.y + maximum_range); y++)
+        for (unsigned y = std::max(0, (int)tile.y - (int)maximum_range); y <= std::min(map.height - 1, tile.y + maximum_range); y++)
         {
-            for (unsigned x = std::max(0u, tile.x - maximum_range); x <= std::min(map.width - 1, tile.x + maximum_range); x++)
+            for (unsigned x = std::max(0, (int)tile.x - (int)maximum_range); x <= std::min(map.width - 1, tile.x + maximum_range); x++)
             {
                 const unsigned abs_distance = abs((int)x - (int)tile.x) + abs((int)y - (int)tile.y);
                 if (abs_distance < minimum_range || abs_distance > maximum_range)
