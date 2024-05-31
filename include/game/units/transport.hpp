@@ -29,7 +29,10 @@ namespace Units
         {
             if (loaded_count == 0 && testIfCanBeJoinedWithUnit(unit)) // join
                 return true;
-            if (loaded_count == capacity) // cant load any further
+
+            Transport<capacity>* other = (Transport<capacity>*)&unit;
+
+            if (loaded_count + other->loaded_count > capacity) // cant load any further
                 return false;
 
             return isUnitLoadable(unit); // can load if id matches
@@ -39,10 +42,11 @@ namespace Units
         {
             if (map[unit].unit->id == id)
             {
-                if(loaded_count > 0)
+                Transport<capacity>* other = (Transport<capacity>*)map[unit].unit.get();
+                if(other->loaded_count > 0)
                 {
-                    ((Transport<capacity>*)map[unit].unit.get())->loaded_units = loaded_units;
-                    ((Transport<capacity>*)map[unit].unit.get())->loaded_count= loaded_count;
+                    loaded_units = other->loaded_units;
+                    loaded_count = other->loaded_count;
                 }
 
                 executeJoinAction(map, unit, me);
