@@ -50,6 +50,7 @@ void UI::AttackInfo::update(Map& map, const TileIndex &index)
         return;
 
     attack_info = AttackSimulator::calculatePossibleDamageValues(map, *map.selected_unit, index);
-    
+    if(!attack_info.can_attack)
+        show = false;
 
 }

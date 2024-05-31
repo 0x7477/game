@@ -128,8 +128,12 @@ std::minstd_rand AttackSimulator::rand{0};
 
 AttackSimulator::AttackPossibilities AttackSimulator::calculatePossibleDamageValues(Map &map, const TileIndex &attacker, const TileIndex &defender)
 {
-    AttackPossibilities possibilities;
+    AttackPossibilities possibilities{};
 
+    if(!canAttack(*map[attacker].unit,*map[defender].unit))
+        return possibilities;
+
+    possibilities.can_attack = true;
     possibilities.attack_min = std::get<unsigned>(calculateDamage(map, attacker, defender, DamageCalculationType::MIN));
     possibilities.attack_max = std::get<unsigned>(calculateDamage(map, attacker, defender, DamageCalculationType::MAX));
     

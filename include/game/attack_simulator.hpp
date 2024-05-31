@@ -19,7 +19,7 @@ public:
     struct AttackPossibilities
     {
         unsigned attack_min{0}, attack_max{0}, defender_min{0}, defender_max{0};
-        bool can_counterattack{false};
+        bool can_attack{false}, can_counterattack{false};
     };
 
     enum DamageCalculationType
