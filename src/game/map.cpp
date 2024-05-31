@@ -38,6 +38,8 @@ Map::Map(Game &game, const std::string &data_string)
     (*this)[5, 5].unit = Unit::createUnit("APC", Team::Red);
     (*this)[5, 4].unit = Unit::createUnit("APC", Team::Red);
     (*this)[6, 4].unit = Unit::createUnit("Infantry", Team::Red);
+    (*this)[5, 4].unit->heal(-10);
+    (*this)[5, 5].unit->heal(-10);
 
     // (*this)[8, 4].unit = Unit::createUnit("Infantry", Team::Blue);
 
