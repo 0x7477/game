@@ -18,7 +18,7 @@ int main(int, char **)
     // network::Client client{"127.0.0.1", 2001};
     network::NetworkManager manager{client};
 
-    std::ifstream ifs("maps/raw/darkling_treshold.txt");
+    std::ifstream ifs("maps/raw/astral_body.txt");
     // std::ifstream ifs("maps/raw/just_plains.txt");
     const std::string map_data(std::istreambuf_iterator<char>{ifs}, {});
 
