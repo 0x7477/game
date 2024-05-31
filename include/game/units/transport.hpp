@@ -39,6 +39,12 @@ namespace Units
         {
             if (map[unit].unit->id == id)
             {
+                if(loaded_count > 0)
+                {
+                    ((Transport<capacity>*)map[unit].unit.get())->loaded_units = loaded_units;
+                    ((Transport<capacity>*)map[unit].unit.get())->loaded_count= loaded_count;
+                }
+
                 executeJoinAction(map, unit, me);
                 return;
             }
@@ -124,9 +130,9 @@ namespace Units
 
             std::vector<Action> actions{};
 
-            const auto join_action_option = getJoinAction(map, me, target);
-            if (join_action_option)
-                actions.push_back(*join_action_option);
+            // const auto join_action_option = getJoinAction(map, me, target);
+            // if (join_action_option)
+            //     actions.push_back(*join_action_option);
 
             if (map[target].unit == nullptr)
             {
