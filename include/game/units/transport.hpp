@@ -30,10 +30,12 @@ namespace Units
             if (loaded_count == 0 && testIfCanBeJoinedWithUnit(unit)) // join
                 return true;
 
-            Transport<capacity>* other = (Transport<capacity>*)&unit;
-
-            if (loaded_count + other->loaded_count > capacity) // cant load any further
-                return false;
+            if (unit.id == id)
+            {
+                Transport<capacity> *other = (Transport<capacity> *)&unit;
+                if (loaded_count + other->loaded_count > capacity) // cant load any further
+                    return false;
+            }
 
             return isUnitLoadable(unit); // can load if id matches
         }
@@ -42,8 +44,8 @@ namespace Units
         {
             if (map[unit].unit->id == id)
             {
-                Transport<capacity>* other = (Transport<capacity>*)map[unit].unit.get();
-                if(other->loaded_count > 0)
+                Transport<capacity> *other = (Transport<capacity> *)map[unit].unit.get();
+                if (other->loaded_count > 0)
                 {
                     loaded_units = other->loaded_units;
                     loaded_count = other->loaded_count;
