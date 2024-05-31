@@ -56,7 +56,7 @@ namespace Units
         virtual std::vector<Action> handlePossibleActions(Map &map, const TileIndex &me, const TileIndex &target) override
         {
             std::vector<Action> actions{};
-            if ((map[target].getId() == "Base" || map[target].getId() == "City" || map[target].getId() == "Port" || map[target].getId() == "Headquarter" || map[target].getId() == "Lab" || map[target].getId() == "CommunicationTower" || map[target].getId() == "Airport") && map[target].team != map.team)
+            if (map[target].unit == nullptr && (map[target].getId() == "Base" || map[target].getId() == "City" || map[target].getId() == "Port" || map[target].getId() == "Headquarter" || map[target].getId() == "Lab" || map[target].getId() == "CommunicationTower" || map[target].getId() == "Airport") && map[target].team != map.team)
                 actions.push_back(Action{.name = "Capture", .execute = [&map, me, target, this](const unsigned &)
                                                             {
                                                                 executeCaptureAction(map, me, target);
