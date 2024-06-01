@@ -15,7 +15,7 @@ std::map<std::string, AttackSimulator::DamageValues> damage_table
     {{BATTLECOPTER}, {20, 1}},
     {{BATTLESHIP}, {50, {}}},
     {{BOMBER}, {90, {}}},
-    {{INFANTRY}, {{}, 100}},
+    {{INFANTRY}, {{}, 1}},
     {{MEDIUMTANK}, {45, 1}},
     {{MECH}, {15, 1}},
     {{MEGATANK}, {115, 1}},

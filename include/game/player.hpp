@@ -9,6 +9,6 @@ public:
     Player(const std::string &name, const Team &team);
 
     std::string name{""};
-    unsigned money{100000};
+    unsigned money{0};
     Team team{Neutral};
 };
