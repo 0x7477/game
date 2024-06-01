@@ -53,7 +53,7 @@ namespace Units
             executeJoinAction(map, unit, me);
         }
 
-        virtual void executeUnitInteraction(Map &map, const TileIndex &unit, const TileIndex &me) override
+        virtual void executeUnitInteraction(Map &map, const TileIndex &unit, const TileIndex &) override
         {
             // load the unit
             loaded_units[loaded_count] = map[unit].unit;
