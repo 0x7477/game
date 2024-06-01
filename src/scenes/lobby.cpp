@@ -20,7 +20,10 @@ std::string generateRandomId()
 
 std::string Scene::Lobby::getPlayerName()
 {
-    return getlogin();
+    const auto login_name = getlogin();
+    if(login_name != nullptr)
+        return login_name;
+    return "tim";
 }
 
 network::RPC<network::Datagram<LobbyMember>, [](const auto &data)
