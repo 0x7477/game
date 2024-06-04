@@ -99,7 +99,7 @@ public:
     void displayMovementTiles(Map &map, const TileIndex &index);
 
     unsigned getCosts();
-    void heal(const unsigned &amount);
+    void heal(Map& map, const TileIndex& position, const unsigned &amount);
 
     MovementType getMovementType() const;
     unsigned getMovementSpeed() const;

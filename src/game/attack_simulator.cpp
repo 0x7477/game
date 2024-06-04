@@ -73,19 +73,14 @@ bool AttackSimulator::canDefenderCounterattack(Map &map, const TileIndex &attack
     const auto &defender = map[defender_index].unit;
 
     const auto defender_died = defender->health < (int)damage_done;
-    std::cout << "defender_died" << defender_died << std::endl;
     if (defender_died)
         return false;
 
     const auto can_defender_attack_attacker = damage_table.contains({defender->id, attacker->id});
-    std::cout << "can_defender_attack_attacker" << can_defender_attack_attacker << std::endl;
     if (!can_defender_attack_attacker)
         return false;
 
     const auto was_direct_attack = TileIndex::areTileIndexesAdjacent(new_pos, defender_index);
-
-    std::cout << "was_direct_attack" << was_direct_attack << std::endl;
-    std::cout << attacker_index <<defender_index << std::endl;
 
     if (!was_direct_attack)
         return false;
@@ -142,7 +137,6 @@ AttackSimulator::AttackPossibilities AttackSimulator::calculatePossibleDamageVal
     
     possibilities.can_counterattack = canDefenderCounterattack(map, attacker, new_pos, defender, possibilities.attack_min);
 
-    std::cout << possibilities.can_counterattack << "\n";
     if (possibilities.can_counterattack)
     {
         const auto defender_health = map[defender].unit->getHealth();

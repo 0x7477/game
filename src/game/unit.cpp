@@ -75,8 +75,9 @@ unsigned Unit::getCosts()
     return unit_costs[id];
 }
 
-void Unit::heal(const unsigned &amount)
+void Unit::heal(Map& map, const TileIndex& position, const unsigned &amount)
 {
+    map.animations.emplace_back(Animation{UI::GIF("misc/heal/", "resources/images/"), 1, position, 0,0});
     health += amount;
 }
 
@@ -338,7 +339,7 @@ void Unit::executeJoinAction(Map &map, const TileIndex &from, const TileIndex &t
     const int healing = std::min(health, missing_health);
     const int money_compensation = (health - healing) * map[from].unit->getCosts() / 10;
     map.game.players[map[from].unit->getTeam()].money += money_compensation;
-    map[to].unit->heal(healing * 10);
+    map[to].unit->heal(map, to, healing * 10);
     map[to].unit->setFinished();
     map[from].unit = nullptr;
     endTurn(map);

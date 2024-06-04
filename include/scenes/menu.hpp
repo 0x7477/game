@@ -27,7 +27,7 @@ namespace Scene
         UI::Button play_button{"Create Game", {20_percent, 20_percent, 70_percent, 20_percent}, [this]()
                                {lobby.setMode(Lobby::Create); 
                                 setScene("lobby"); }};
-        UI::Button editor_button{"Build", {40_percent, 20_percent, 50_percent, 20_percent}, [&]()
+        UI::Button editor_button{"Join Game", {40_percent, 20_percent, 50_percent, 20_percent}, [&]()
                                {lobby.setMode(Lobby::Join); 
                                 setScene("lobby"); }};
         UI::Button exit_button{"Exit", {60_percent, 20_percent, 30_percent, 20_percent}, [&]()

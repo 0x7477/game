@@ -48,17 +48,17 @@ void RepairUnits::handleStartOfTurn(Map &map, const TileIndex &tile_index)
 
     else if (unit.getUnitCount() == 9 && money >= unit_costs / 10)
     {
-        unit.heal(10);
+        unit.heal(map, tile_index, 10);
         money -= unit_costs / 10; // just needs small healing
     }
     else if (money >= unit_costs / 5)
     {
-        unit.heal(20);
+        unit.heal(map, tile_index, 20);
         money -= unit_costs / 5; // needs big healing
     }
     else if (money >= unit_costs / 10)
     {
-        unit.heal(10);
+        unit.heal(map, tile_index, 10);
         money -= unit_costs / 10; // can just afford small healing
     }
 }
