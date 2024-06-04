@@ -54,14 +54,21 @@ void UI::UnitDetail::draw(sf::RenderWindow &window)
 void UI::UnitDetail::setInfo(const Tile &tile)
 {
     protection = std::to_string(tile.getDefense());
+    display_health = false;
     if (tile.unit)
     {
         ammo = std::to_string(tile.unit->ammo);
         display_ammo = tile.unit->stats.max_ammo > 0;
         health = std::to_string(tile.unit->getUnitCount());
+        display_health = true;
     }
     else
+    {
+        if(tile.getHealth())
+        {
+            health = std::to_string(*tile.getHealth());
+            display_health = true;
+        }
         display_ammo = false;
-
-    display_health = tile.unit != nullptr;
+    }
 }

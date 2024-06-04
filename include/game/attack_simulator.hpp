@@ -34,10 +34,10 @@ public:
         std::optional<int> primary, secondary;
     };
 
-    static bool canDefenderCounterattack(Map &map, const TileIndex &attacker_index, const TileIndex &defender_index, const unsigned& damage_done);
+    static bool canDefenderCounterattack(Map &map, const TileIndex &attacker_index, const TileIndex &new_pos,const TileIndex &defender_index, const unsigned& damage_done);
     static bool canAttack(const Unit& attacker, const Unit& defender);
     static AttackResult attack(Map& map, const TileIndex& attacker, const TileIndex& defender);
-    static AttackPossibilities calculatePossibleDamageValues(Map& map, const TileIndex& attacker, const TileIndex& defender);
+    static AttackPossibilities calculatePossibleDamageValues(Map& map, const TileIndex& attacker, const TileIndex &new_pos, const TileIndex& defender);
 private:
     static std::tuple<unsigned, bool> calculateDamage(Map& map, const TileIndex& attacker, const TileIndex& defender,const DamageCalculationType& calculation_type = DamageCalculationType::RANDOM,const std::optional<unsigned>& attacker_health_override = {});
     static std::minstd_rand rand;

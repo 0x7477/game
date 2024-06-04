@@ -41,6 +41,29 @@ Map::Map(Game &game, const std::string &data_string)
     // (*this)[5, 4].unit->heal(-10);
     // (*this)[5, 3].unit->heal(-10);
 
+    (*this)[0, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    (*this)[1, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    (*this)[2, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    (*this)[3, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    (*this)[4, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    (*this)[5, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    (*this)[6, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    (*this)[7, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    (*this)[8, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    (*this)[9, 0].unit = Unit::createUnit(TANK, Team::Blue);
+
+    (*this)[5, 1].unit = Unit::createUnit(TANK, Team::Red);
+
+    (*this)[1, 0].unit->heal(-10);
+    (*this)[2, 0].unit->heal(-20);
+    (*this)[3, 0].unit->heal(-30);
+    (*this)[4, 0].unit->heal(-40);
+    (*this)[5, 0].unit->heal(-50);
+    (*this)[6, 0].unit->heal(-60);
+    (*this)[7, 0].unit->heal(-70);
+    (*this)[8, 0].unit->heal(-80);
+    (*this)[9, 0].unit->heal(-90);
+    // (*this)[5, 4].unit = Unit::createUnit(ROCKET, Team::Red);
     // (*this)[8, 4].unit = Unit::createUnit("Infantry", Team::Blue);
 
     // (*this)[5, 0].unit = Unit::createUnit("Rocket", Team::Blue);
@@ -52,10 +75,7 @@ template <>
 void Map::displayMode<ViewMode::Shopping>(sf::RenderWindow &window)
 {
     drawMap(window);
-    header.setMoney(game.players[game.current_active_player].money);
-    header.setName(game.players[game.current_active_player].name);
-    header.draw(window);
-
+    displayHeader(window);
     shopping_menu.draw(window);
 }
 
@@ -63,11 +83,20 @@ template <>
 void Map::displayMode<ViewMode::Watch>(sf::RenderWindow &window)
 {
     drawMap(window);
+    displayHeader(window);
 }
 void Map::resize()
 {
     pos_x = (WindowManager::window_width - scale * 16 * width) / 2;
     pos_y = (WindowManager::window_height - scale * 16 * height) / 2;
+}
+
+void Map::displayHeader(sf::RenderWindow &window)
+{
+    header.setMoney(game.players[game.current_active_player].money);
+    header.setName(game.players[game.current_active_player].name);
+
+    header.draw(window);
 }
 
 template <>
@@ -81,12 +110,7 @@ void Map::displayMode<ViewMode::View>(sf::RenderWindow &window)
         getTile(*selected_unit).unit->displayPath(window, *this);
 
     drawCursor(window);
-
-    header.setMoney(game.players[game.current_active_player].money);
-    header.setName(game.players[game.current_active_player].name);
-
-    header.draw(window);
-
+    displayHeader(window);
     unit_detail.setInfo((*this)[cursor]);
     unit_detail.draw(window);
 }
@@ -113,6 +137,7 @@ void Map::displayMode<ViewMode::SelectTarget>(sf::RenderWindow &window)
         mode = SelectAction;
         clearTileEffects();
     }
+    displayHeader(window);
 }
 
 template <>
@@ -120,6 +145,7 @@ void Map::displayMode<ViewMode::SelectAction>(sf::RenderWindow &window)
 {
     drawMap(window);
     action_menu.draw(window);
+    displayHeader(window);
 }
 
 template <>
@@ -131,6 +157,19 @@ void Map::displayMode<ViewMode::Result>(sf::RenderWindow &window)
 
 void Map::display(sf::RenderWindow &window)
 {
+    delta_time.update();
+
+    if (WindowManager::getKeyDown(sf::Keyboard::Z))
+    {
+        scale++;
+        resize();
+    }
+    if (WindowManager::getKeyDown(sf::Keyboard::U))
+    {
+        scale = std::max(scale - 1, 1.f);
+        resize();
+    }
+
     if (winner != Neutral)
         displayMode<Result>(window);
     else if (game.current_active_player != team)
@@ -160,9 +199,6 @@ void Map::win(const Team &winner_team)
 
 void Map::drawCursor(sf::RenderWindow &window)
 {
-
-    smooth_cursor_x += ((cursor.x * scale * tile_size) - smooth_cursor_x) * 10 * delta_time;
-    smooth_cursor_y += ((cursor.y * scale * tile_size) - smooth_cursor_y) * 10 * delta_time;
 
     cursor_sprite.setScale(scale * tile_size / cursor_sprite.getTexture()->getSize().x, scale * tile_size / cursor_sprite.getTexture()->getSize().y);
     cursor_sprite.setPosition(smooth_x + smooth_cursor_x, smooth_y + smooth_cursor_y);
@@ -280,35 +316,38 @@ void Map::handleEvents()
             clearTileEffects();
             show_enemy_tiles = false;
         }
-
-        auto &tile = getCursorTile();
-
-        if (!selected_unit)
+        else
         {
-            if (!tile.unit)
+
+            auto &tile = getCursorTile();
+
+            if (!selected_unit)
             {
-                if (!tile.interact(*this, cursor))
-                    handleMenu();
-            }
-            else if (tile.unit->getTeam() == team)
-            {
-                clearTileEffects();
-                if (!tile.unit->select(*this, cursor))
-                    handleMenu();
+                if (!tile.unit)
+                {
+                    if (!tile.interact(*this, cursor))
+                        handleMenu();
+                }
+                else if (tile.unit->getTeam() == team)
+                {
+                    clearTileEffects();
+                    if (!tile.unit->select(*this, cursor))
+                        handleMenu();
+                }
+                else
+                {
+                    clearTileEffects();
+                    const auto tiles = MovementSelector::getTiles(*this, cursor, *tile.unit);
+                    setMovementTileMode(tiles, Tile::DisplayMode::Move);
+                    show_enemy_tiles = true;
+                }
             }
             else
             {
-                clearTileEffects();
-                const auto tiles = MovementSelector::getTiles(*this, cursor, *tile.unit);
-                setMovementTileMode(tiles, Tile::DisplayMode::Move);
-                show_enemy_tiles = true;
+                assert(selected_unit);
+                assert(getTile(*selected_unit).unit);
+                getTile(*selected_unit).unit->act(*this, *selected_unit, cursor);
             }
-        }
-        else
-        {
-            assert(selected_unit);
-            assert(getTile(*selected_unit).unit);
-            getTile(*selected_unit).unit->act(*this, *selected_unit, cursor);
         }
     }
     if (selected_unit)
@@ -377,7 +416,6 @@ void Map::moveMapToContain(const TileIndex &index)
 void Map::moveCursor()
 {
     auto &[cursor_x, cursor_y] = cursor;
-    delta_time.update();
     bool button_was_pressed{false};
     if (WindowManager::getKey(sf::Keyboard::Left) && !WindowManager::getKey(sf::Keyboard::Right))
     {
@@ -482,6 +520,9 @@ void Map::drawMap(sf::RenderWindow &window)
 {
     smooth_x += (pos_x - smooth_x) * 10 * delta_time;
     smooth_y += (pos_y - smooth_y) * 10 * delta_time;
+
+    smooth_cursor_x += ((cursor.x * scale * tile_size) - smooth_cursor_x) * 10 * delta_time;
+    smooth_cursor_y += ((cursor.y * scale * tile_size) - smooth_cursor_y) * 10 * delta_time;
 
     for (unsigned y{0}; y < height; y++)
         for (unsigned x{0}; x < width; x++)

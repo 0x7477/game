@@ -39,6 +39,7 @@ public:
     void displayMode(sf::RenderWindow &window);
 
     void display(sf::RenderWindow &window);
+    void displayHeader(sf::RenderWindow &window);
 
     void drawCursor(sf::RenderWindow &window);
 
@@ -103,7 +104,7 @@ public:
 
     std::optional<std::vector<TileIndex>> selectable_targets{};
     std::function<void(const TileIndex &)> select_function;
-    const float scale = 4;
+    float scale = 4;
     constexpr static float tile_size{16.f};
     float time_since_movement_button_was_pressed;
 

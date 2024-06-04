@@ -67,21 +67,25 @@ std::tuple<unsigned, bool> AttackSimulator::calculateDamage(Map &map, const Tile
     return {afflicted_damage, does_use_primary};
 }
 
-bool AttackSimulator::canDefenderCounterattack(Map &map, const TileIndex &attacker_index, const TileIndex &defender_index, const unsigned &damage_done)
+bool AttackSimulator::canDefenderCounterattack(Map &map, const TileIndex &attacker_index,const TileIndex &new_pos, const TileIndex &defender_index, const unsigned &damage_done)
 {
     const auto &attacker = map[attacker_index].unit;
     const auto &defender = map[defender_index].unit;
 
     const auto defender_died = defender->health < (int)damage_done;
-
+    std::cout << "defender_died" << defender_died << std::endl;
     if (defender_died)
         return false;
 
     const auto can_defender_attack_attacker = damage_table.contains({defender->id, attacker->id});
+    std::cout << "can_defender_attack_attacker" << can_defender_attack_attacker << std::endl;
     if (!can_defender_attack_attacker)
         return false;
 
-    const auto was_direct_attack = TileIndex::areTileIndexesAdjacent(attacker_index, defender_index);
+    const auto was_direct_attack = TileIndex::areTileIndexesAdjacent(new_pos, defender_index);
+
+    std::cout << "was_direct_attack" << was_direct_attack << std::endl;
+    std::cout << attacker_index <<defender_index << std::endl;
 
     if (!was_direct_attack)
         return false;
@@ -99,7 +103,7 @@ AttackSimulator::AttackResult AttackSimulator::attack(Map &map, const TileIndex 
 
     const auto [calculated_damage, used_ammo] = calculateDamage(map, attacker_index, defender_index);
 
-    const auto does_defender_counterattack = canDefenderCounterattack(map, attacker_index, defender_index, calculated_damage);
+    const auto does_defender_counterattack = canDefenderCounterattack(map, attacker_index,attacker_index, defender_index, calculated_damage);
     if (used_ammo)
         attacker->ammo--;
 
@@ -125,7 +129,7 @@ AttackSimulator::DamageValues::DamageValues(const std::optional<int> &primary, c
 
 std::minstd_rand AttackSimulator::rand{0};
 
-AttackSimulator::AttackPossibilities AttackSimulator::calculatePossibleDamageValues(Map &map, const TileIndex &attacker, const TileIndex &defender)
+AttackSimulator::AttackPossibilities AttackSimulator::calculatePossibleDamageValues(Map &map, const TileIndex &attacker, const TileIndex &new_pos, const TileIndex &defender)
 {
     AttackPossibilities possibilities{};
 
@@ -136,8 +140,9 @@ AttackSimulator::AttackPossibilities AttackSimulator::calculatePossibleDamageVal
     possibilities.attack_min = std::get<unsigned>(calculateDamage(map, attacker, defender, DamageCalculationType::MIN));
     possibilities.attack_max = std::get<unsigned>(calculateDamage(map, attacker, defender, DamageCalculationType::MAX));
     
-    possibilities.can_counterattack = canDefenderCounterattack(map, attacker, defender, possibilities.attack_max);
+    possibilities.can_counterattack = canDefenderCounterattack(map, attacker, new_pos, defender, possibilities.attack_min);
 
+    std::cout << possibilities.can_counterattack << "\n";
     if (possibilities.can_counterattack)
     {
         const auto defender_health = map[defender].unit->getHealth();

@@ -110,6 +110,9 @@ public:
 
     bool isAttackable(Map &map, const TileIndex &tile, const Unit &unit);
 
+    virtual int getPotentialDamageFrom(const Unit &unit) const;
+    virtual std::optional<int> getHealth() const;
+
     template <typename T>
     static void registerClass(const unsigned &id)
     {

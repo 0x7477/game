@@ -33,6 +33,9 @@ void unit_action(const network::Datagram<Unit::ActionId, std::vector<TileIndex>,
 
     Game::game->map.moveMapToContain(path_start);
     Game::game->map.moveMapToContain(path_end);
+    Game::game->map.moveMapToContain(target);
+
+    Game::game->map.animations.emplace_back(Animation{UI::GIF("misc/selector/", "resources/images/"), .3, path_start, 0, 0});
 
     const auto &unit = Game::game->map[path_start].unit;
 

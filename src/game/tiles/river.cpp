@@ -5,7 +5,7 @@ namespace Tiles
     struct River : Tile
     {
         River()
-            : Tile({2, MovementCosts{{2, 1, 0, 0, 0, 0, 1, 0}}})
+            : Tile({0, MovementCosts{{2, 1, 0, 0, 0, 0, 1, 0}}})
         {
         }
     };

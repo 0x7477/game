@@ -35,7 +35,7 @@ void RepairUnits::handleStartOfTurn(Map &map, const TileIndex &tile_index)
     if (!map[tile_index].unit)
         return;
 
-    auto& unit = *map[tile_index].unit;
+    auto &unit = *map[tile_index].unit;
 
     if (unit.getTeam() != map[tile_index].team)
         return;
@@ -64,7 +64,7 @@ void RepairUnits::handleStartOfTurn(Map &map, const TileIndex &tile_index)
 }
 
 ProduceUnit::ProduceUnit(const std::vector<std::string> &factory_produced_units)
-        : factory_produced_units{factory_produced_units} {}
+    : factory_produced_units{factory_produced_units} {}
 
 bool ProduceUnit::interact(Map &map, const TileIndex &tile_index) const
 {
@@ -84,81 +84,90 @@ bool ProduceUnit::interact(Map &map, const TileIndex &tile_index) const
     return true;
 }
 
+std::optional<int> Tile::getHealth() const
+{
+    return {};
+}
 
-    std::unique_ptr<Tile> Tile::createTile(unsigned id)
-    {
-        if (!library.contains(id))
-            std::cout << "missing id " << id << "\n";
-        assert(library.contains(id));
-        return library[id]();
-    }
+int Tile::getPotentialDamageFrom(const Unit &) const
+{
+    return 0;
+}
 
-    void Tile::setTeam(const Team &new_team)
-    {
-        team = new_team;
-        sprite = UI::GIF("tiles/" + id + "/" + std::to_string(team) + "/", "resources/images/");
-    }
+std::unique_ptr<Tile> Tile::createTile(unsigned id)
+{
+    if (!library.contains(id))
+        std::cout << "missing id " << id << "\n";
+    assert(library.contains(id));
+    return library[id]();
+}
 
-    void Tile::startRound(Map& map, const TileIndex& index)
-    {
-        info.tile_round_behaviour.handleStartOfTurn(map, index);
-    }
+void Tile::setTeam(const Team &new_team)
+{
+    team = new_team;
+    sprite = UI::GIF("tiles/" + id + "/" + std::to_string(team) + "/", "resources/images/");
+}
 
-    std::string Tile::getId() const
-    {
-        return id;
-    }
+void Tile::startRound(Map &map, const TileIndex &index)
+{
+    info.tile_round_behaviour.handleStartOfTurn(map, index);
+}
 
-    unsigned Tile::getMovementCost(const MovementType &type)
-    {
-        return info.movement_costs.getCosts(type);
-    }
+std::string Tile::getId() const
+{
+    return id;
+}
 
-        unsigned Tile::getDefense() const
-    {
-        return info.defense;
-    }
+unsigned Tile::getMovementCost(const MovementType &type)
+{
+    return info.movement_costs.getCosts(type);
+}
 
-     void Tile::setDirection(const Direction &direction_)
-    {
-        direction = direction_;
-        sprite = UI::GIF("tiles/" + id + "/" + std::to_string(direction) + "/", "resources/images/");
-    }
+unsigned Tile::getDefense() const
+{
+    return info.defense;
+}
 
-        bool Tile::isAttackable(Map &map, const TileIndex &tile, const Unit &unit)
-    {
-        return info.tile_attack_interaction.isAttackable(map, tile, unit);
-    }
+void Tile::setDirection(const Direction &direction_)
+{
+    direction = direction_;
+    sprite = UI::GIF("tiles/" + id + "/" + std::to_string(direction) + "/", "resources/images/");
+}
 
-        void Tile::attack(Map &map, const TileIndex &unit, const TileIndex &tile)
-    {
-        return info.tile_attack_interaction.attack(map, unit, tile);
-    }
+bool Tile::isAttackable(Map &map, const TileIndex &tile, const Unit &unit)
+{
+    return info.tile_attack_interaction.isAttackable(map, tile, unit);
+}
 
-        bool Tile::interact(Map &map, const TileIndex &tile)
-    {
-        return info.player_interaction.interact(map, tile);
-    }
+void Tile::attack(Map &map, const TileIndex &unit, const TileIndex &tile)
+{
+    return info.tile_attack_interaction.attack(map, unit, tile);
+}
 
-        void Tile::setDisplayMode(const DisplayMode &new_display_mode)
-    {
-        display_mode = new_display_mode;
-    }
-    Tile::Tile(const TileInfo &info, const std::source_location &location)
-        : id{getClassName(location)}, info{info}, sprite{"tiles/" + id + "/" + std::to_string(team) + "/", "resources/images/"},
-          movement_effect{"misc/movement/", "resources/images/"},
-          attack_effect{"misc/attack_tile/", "resources/images/"}
-    {
-    }
+bool Tile::interact(Map &map, const TileIndex &tile)
+{
+    return info.player_interaction.interact(map, tile);
+}
 
-    std::string Tile::getClassName(const std::source_location &location)
-    {
-        const std::string function_name{location.function_name()};
-        const auto start{function_name.find_last_of(':') + 1};
-        const auto end{function_name.find_last_of(']')};
+void Tile::setDisplayMode(const DisplayMode &new_display_mode)
+{
+    display_mode = new_display_mode;
+}
+Tile::Tile(const TileInfo &info, const std::source_location &location)
+    : id{getClassName(location)}, info{info}, sprite{"tiles/" + id + "/" + std::to_string(team) + "/", "resources/images/"},
+      movement_effect{"misc/movement/", "resources/images/"},
+      attack_effect{"misc/attack_tile/", "resources/images/"}
+{
+}
 
-        if (end == std::string::npos)
-            return function_name.substr(7, function_name.find(':', 8) - 7);
+std::string Tile::getClassName(const std::source_location &location)
+{
+    const std::string function_name{location.function_name()};
+    const auto start{function_name.find_last_of(':') + 1};
+    const auto end{function_name.find_last_of(']')};
 
-        return function_name.substr(start, end - start);
-    }
+    if (end == std::string::npos)
+        return function_name.substr(7, function_name.find(':', 8) - 7);
+
+    return function_name.substr(start, end - start);
+}
