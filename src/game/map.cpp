@@ -41,20 +41,20 @@ Map::Map(Game &game, const std::string &data_string)
     // (*this)[5, 4].unit->heal(-10);
     // (*this)[5, 3].unit->heal(-10);
 
-    (*this)[0, 0].unit = Unit::createUnit(TANK, Team::Blue);
-    (*this)[1, 0].unit = Unit::createUnit(TANK, Team::Blue);
-    (*this)[2, 0].unit = Unit::createUnit(TANK, Team::Blue);
-    (*this)[3, 0].unit = Unit::createUnit(TANK, Team::Blue);
-    (*this)[4, 0].unit = Unit::createUnit(TANK, Team::Blue);
-    (*this)[5, 0].unit = Unit::createUnit(TANK, Team::Blue);
-    (*this)[6, 0].unit = Unit::createUnit(TANK, Team::Blue);
-    (*this)[7, 0].unit = Unit::createUnit(TANK, Team::Blue);
-    (*this)[8, 0].unit = Unit::createUnit(TANK, Team::Blue);
-    (*this)[9, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    // (*this)[0, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    // (*this)[1, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    // (*this)[2, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    // (*this)[3, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    // (*this)[4, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    // (*this)[5, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    // (*this)[6, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    // (*this)[7, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    // (*this)[8, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    // (*this)[9, 0].unit = Unit::createUnit(TANK, Team::Blue);
 
-    (*this)[5, 1].unit = Unit::createUnit(ARTILLERY, Team::Red);
+    // (*this)[5, 1].unit = Unit::createUnit(ARTILLERY, Team::Red);
 
-    (*this)[1, 0].unit->heal(*this, {1,0},-10);
+    // (*this)[1, 0].unit->heal(*this, {1,0},-10);
     // (*this)[2, 0].unit->heal(-20);
     // (*this)[3, 0].unit->heal(-30);
     // (*this)[4, 0].unit->heal(-40);
