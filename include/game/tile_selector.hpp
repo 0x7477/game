@@ -10,10 +10,10 @@ class Unit;
 
 class MovementSelector
 {
-    static void fill(Map &map, const TileIndex &index, const int &remaining_movement_speed, const Unit &unit, std::vector<TileIndex> &tile_indices, std::map<TileIndex, std::tuple<int, TileIndex>> &discovered_movement_costs,const TileIndex &last_index);
+    static void fill(Map &map, const TileIndex &index, const int &remaining_movement_speed, const Unit &unit, std::vector<TileIndex> &tile_indices, std::map<TileIndex, std::tuple<int, TileIndex>> &discovered_movement_costs,const TileIndex &last_index, const bool& visual = false);
 
 public:
-    static std::vector<TileIndex> getTiles(Map &map, const TileIndex &tile_index, const Unit &unit);
+    static std::vector<TileIndex> getTiles(Map &map, const TileIndex &tile_index, const Unit &unit, const bool& visual = false);
     static std::optional<std::vector<TileIndex>> getPath(Map &map, const TileIndex &start, const TileIndex &end, const Unit &unit);
 };
 

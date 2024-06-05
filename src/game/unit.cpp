@@ -162,7 +162,7 @@ bool Unit::isRangedUnit() const
 
 void Unit::displayMovementTiles(Map &map, const TileIndex &index)
 {
-    const auto possible_movement_tiles = MovementSelector::getTiles(map, index, *this);
+    const auto possible_movement_tiles = MovementSelector::getTiles(map, index, *this, true);
 
     for (const auto &tile_index : possible_movement_tiles)
         map[tile_index].setDisplayMode(Tile::Move);
@@ -326,9 +326,9 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
         map.action_menu.setOptions(options, execute_action, cancel_action);
     };
 
-    movement_manager.startAnimation(on_movement_finished);
-    map.mode = SelectAction;
     map.action_menu.clearOptions();
+    map.mode = SelectAction;
+    movement_manager.startAnimation(on_movement_finished);
 }
 
 void Unit::executeJoinAction(Map &map, const TileIndex &from, const TileIndex &to)

@@ -20,6 +20,7 @@
 #include <game/animation.hpp>
 #include <helper/delta_timer.hpp>
 #include <ui/attack_info.hpp>
+#include <ui/turn_notification.hpp>
 
 class Game;
 class Unit;
@@ -119,6 +120,7 @@ public:
     UI::UnitDetail unit_detail;
     UI::Header header;
     UI::AttackInfo attack_info;
+    UI::TurnNotification turn_notification;
     ViewMode mode{View};
     DeltaTimer delta_time{};
 

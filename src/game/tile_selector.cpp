@@ -4,7 +4,7 @@
 #include <game/attack_simulator.hpp>
 #include <set>
 
-void MovementSelector::fill(Map &map, const TileIndex &index, const int &remaining_movement_speed, const Unit &unit, std::vector<TileIndex> &tile_indices, std::map<TileIndex, std::tuple<int, TileIndex>> &discovered_movement_costs, const TileIndex &last_index)
+void MovementSelector::fill(Map &map, const TileIndex &index, const int &remaining_movement_speed, const Unit &unit, std::vector<TileIndex> &tile_indices, std::map<TileIndex, std::tuple<int, TileIndex>> &discovered_movement_costs, const TileIndex &last_index, const bool& visual)
 {
     if (remaining_movement_speed < 0)
         return;
@@ -19,7 +19,11 @@ void MovementSelector::fill(Map &map, const TileIndex &index, const int &remaini
     {
         if (tile.unit->getTeam() != unit.getTeam())
             return;
+        
         is_movement_possible = tile.unit->allowUnitInteraction(unit);
+
+        if(visual)
+            is_movement_possible = true;
     }
 
     discovered_movement_costs[index] = {remaining_movement_speed, last_index};
@@ -33,15 +37,15 @@ void MovementSelector::fill(Map &map, const TileIndex &index, const int &remaini
 
         if (movement_cost == 0)
             continue;
-        fill(map, neighbour, remaining_movement_speed - movement_cost, unit, tile_indices, discovered_movement_costs, index);
+        fill(map, neighbour, remaining_movement_speed - movement_cost, unit, tile_indices, discovered_movement_costs, index, visual);
     }
 }
 
-std::vector<TileIndex> MovementSelector::getTiles(Map &map, const TileIndex &tile_index, const Unit &unit)
+std::vector<TileIndex> MovementSelector::getTiles(Map &map, const TileIndex &tile_index, const Unit &unit, const bool& visual)
 {
     std::vector<TileIndex> tiles{tile_index};
     std::map<TileIndex, std::tuple<int, TileIndex>> discovered_movement_costs{};
-    fill(map, tile_index, unit.getMovementSpeed(), unit, tiles, discovered_movement_costs, tile_index);
+    fill(map, tile_index, unit.getMovementSpeed(), unit, tiles, discovered_movement_costs, tile_index, visual);
     return tiles;
 }
 
@@ -123,7 +127,7 @@ std::vector<TileIndex> AttackableSelector::getTiles(Map &map, const TileIndex &t
     std::set<TileIndex> indices;
 
     
-    const auto moveable_tiles = unit.isRangedUnit()? std::vector{tile_index} : MovementSelector::getTiles(map, tile_index, unit);
+    const auto moveable_tiles = unit.isRangedUnit()? std::vector{tile_index} : MovementSelector::getTiles(map, tile_index, unit, true);
     for (const auto &tile : moveable_tiles)
     {
         const auto maximum_range = unit.stats.attack_range_max;

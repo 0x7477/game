@@ -50,7 +50,7 @@ Map::Map(Game &game, const std::string &data_string)
     // (*this)[6, 0].unit = Unit::createUnit(TANK, Team::Blue);
     // (*this)[7, 0].unit = Unit::createUnit(TANK, Team::Blue);
     // (*this)[8, 0].unit = Unit::createUnit(TANK, Team::Blue);
-    // (*this)[9, 0].unit = Unit::createUnit(TANK, Team::Blue);
+    // (*this)[9, 0].unit = Unit::createUnit(BATTLECOPTER, Team::Red);
 
     // (*this)[5, 1].unit = Unit::createUnit(ARTILLERY, Team::Red);
 
@@ -113,6 +113,8 @@ void Map::displayMode<ViewMode::View>(sf::RenderWindow &window)
     displayHeader(window);
     unit_detail.setInfo((*this)[cursor]);
     unit_detail.draw(window);
+
+    turn_notification.draw(window);
 }
 template <>
 void Map::displayMode<ViewMode::SelectTarget>(sf::RenderWindow &window)
@@ -188,6 +190,9 @@ void Map::display(sf::RenderWindow &window)
 
     else if (mode == SelectTarget)
         displayMode<SelectTarget>(window);
+
+
+
 }
 
 void Map::win(const Team &winner_team)
@@ -326,18 +331,22 @@ void Map::handleEvents()
                 if (!tile.unit)
                 {
                     if (!tile.interact(*this, cursor))
+                    {
                         handleMenu();
+                    }
                 }
                 else if (tile.unit->getTeam() == team)
                 {
                     clearTileEffects();
                     if (!tile.unit->select(*this, cursor))
+                    {
                         handleMenu();
+                    }
                 }
                 else
                 {
                     clearTileEffects();
-                    const auto tiles = MovementSelector::getTiles(*this, cursor, *tile.unit);
+                    const auto tiles = MovementSelector::getTiles(*this, cursor, *tile.unit, true);
                     setMovementTileMode(tiles, Tile::DisplayMode::Move);
                     show_enemy_tiles = true;
                 }
@@ -541,7 +550,6 @@ void Map::drawMap(sf::RenderWindow &window)
 
 void Map::beginTurn(const Team &begin_turn_team)
 {
-    (void)begin_turn_team;
     for (unsigned y{0}; y < height; y++)
         for (unsigned x{0}; x < width; x++)
         {
@@ -551,6 +559,9 @@ void Map::beginTurn(const Team &begin_turn_team)
             if (tile.unit)
                 tile.unit->startRound(*this, {x, y});
         }
+
+    if(team == begin_turn_team)
+        turn_notification.notify();
 }
 
 std::vector<TileIndex> Map::getNeighbors(const TileIndex &index)
