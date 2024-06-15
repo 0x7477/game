@@ -140,11 +140,11 @@ AttackSimulator::AttackPossibilities AttackSimulator::calculatePossibleDamageVal
     if (possibilities.can_counterattack)
     {
         const auto defender_health = map[defender].unit->getHealth();
-        const int defender_health_max = std::max(0,((int)defender_health - (int)possibilities.attack_max) / 10 );
-        const int defender_health_min = std::max(0,((int)defender_health - (int)possibilities.attack_min) / 10 );
+        const int defender_health_max = std::max(0,((int)defender_health - (int)possibilities.attack_max + 9) / 10 );
+        const int defender_health_min = std::max(0,((int)defender_health - (int)possibilities.attack_min + 9) / 10 );
 
-        possibilities.defender_max = std::get<unsigned>(calculateDamage(map, defender, attacker, DamageCalculationType::MAX, defender_health_max));
-        possibilities.defender_min = std::get<unsigned>(calculateDamage(map, defender, attacker, DamageCalculationType::MIN, defender_health_min));
+        possibilities.defender_max = std::get<unsigned>(calculateDamage(map, defender, attacker, DamageCalculationType::MAX, defender_health_min));
+        possibilities.defender_min = std::get<unsigned>(calculateDamage(map, defender, attacker, DamageCalculationType::MIN, defender_health_max));
     }
     return possibilities;
 }

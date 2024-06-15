@@ -36,6 +36,8 @@ public:
 
     std::vector<unsigned> getLineData(const std::string_view &line);
 
+    TileIndex getHeadquarterPosition(const Team& team);
+
     template <ViewMode mode>
     void displayMode(sf::RenderWindow &window);
 
@@ -44,6 +46,7 @@ public:
 
     void drawCursor(sf::RenderWindow &window);
 
+    void setTeam(const Team& team);
     void resize();
     Tile &getCursorTile();
 

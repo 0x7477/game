@@ -105,7 +105,10 @@ Scene::Lobby::Lobby(WindowManager &window_manager, network::NetworkManager &netw
       network_manager{network_manager},
       battle{battle},
       title_text{"", font_resources.get("arial.ttf")},
-      room_number{"", font_resources.get("arial.ttf")}
+      room_number{"", font_resources.get("arial.ttf")},
+      background{image_resources.get("backgrounds/fighter.png")},
+      player_background{image_resources.get("misc/unit_detail.png")}
+
 {
     lobby_scene = this;
     if (!ready)
@@ -162,6 +165,15 @@ void Scene::Lobby::drawLobby()
 {
     auto &window = window_manager.window;
     window.clear(sf::Color(35, 45, 55));
+    
+    const auto scale = (float)WindowManager::window_width / background.getTexture()->getSize().x;
+    background.setScale(scale,scale);
+    window.draw(background);
+
+    player_background.setPosition(player_area.rect.x, player_area.rect.y);
+    player_background.setScale(player_area.rect.width / player_background.getTexture()->getSize().x,player_area.rect.height / player_background.getTexture()->getSize().y);
+    window.draw(player_background);
+
     window.draw(room_number);
 
     unsigned player_number{0};
@@ -258,6 +270,8 @@ void Scene::Lobby::onJoined(const std::optional<std::string> &error_)
         for (const auto &[id, _] : lobby.players)
             std::cout << "player " << id << " in lobby\n";
         joined = true;
-        battle.game.map.team = Team::Blue;
+
+        battle.game.map.setTeam(Team::Blue);
+        
     }
 }

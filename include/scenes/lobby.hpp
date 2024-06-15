@@ -52,11 +52,13 @@ namespace Scene
         std::optional<std::string> error{};
         sf::Text title_text;
         sf::Text room_number;
+        UI::Layout player_area{30_percent, 20_percent, 45_percent, 20_percent};
         UI::Button error_button{"Error", {20_percent, 20_percent, 40_percent, 20_percent},[&](){error={};}};
         UI::InputField lobby_id_input{{20_percent, 20_percent, 60_percent, 20_percent}};
         UI::Button ready_button{"Ready", {60_percent, 20_percent, 30_percent, 60_percent}, [&](){ready = true; sendReady();}};
         UI::Button join_button{"Join", {60_percent, 20_percent, 30_percent, 60_percent}, [&](){joinGame();}};
         UI::Button exit_button{"Exit", {60_percent, 60_percent, 30_percent, 20_percent},[&](){setScene("menu");}};
+        sf::Sprite background, player_background;
     };
 
     

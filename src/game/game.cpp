@@ -53,7 +53,6 @@ void create_unit(const network::Datagram<std::string, Team, TileIndex> &data)
 
     Game::game->map.createUnit(unit_id, team, target);
     Game::game->map[target].unit->setFinished();
-    Game::game->players[team].money -= Unit::unit_costs[unit_id];
 }
 network::RPC<network::Datagram<std::string, Team, TileIndex>, create_unit> create_unit_rpc{"create_unit_rpc"};
 

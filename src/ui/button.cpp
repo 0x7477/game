@@ -1,9 +1,9 @@
 #include <ui/button.hpp>
 
 UI::Button::Button(const std::string &text_, const Layout &layout, std::function<void()> on_click)
-    : text{text_, font_resources.get("arial.ttf")}, layout{layout}, on_click{on_click}
+    :background{image_resources.get("misc/top_banner.png")}, text{text_, font_resources.get("arial.ttf"), 50}, layout{layout}, on_click{on_click}
 {
-    background.setFillColor(background_color);
+    background.setColor(background_color);
     sf::FloatRect rect = text.getLocalBounds();
     text.setOrigin(rect.left + rect.width / 2.0f, rect.top + rect.height / 2.0f);
 }
@@ -16,16 +16,18 @@ UI::Layout &UI::Button::getLayout()
 void UI::Button::setColor(const sf::Color &color)
 {
     background_color = color;
-    background.setFillColor(background_color);
+    background.setColor(background_color);
 }
 
 template <>
 void UI::Button::display<UI::Button::State::Normal>(sf::RenderWindow &window)
 {
     const auto &rect = layout.getRect();
-    background.setSize({rect.width, rect.height});
+
+    const auto &texture_rect = background.getTexture()->getSize();
+    background.setScale(rect.width / texture_rect.x,rect.height / texture_rect.y);
+    
     background.setPosition(rect.x, rect.y);
-    background.setOutlineThickness(0);
     window.draw(background);
 
     text.setPosition(rect.x + rect.width / 2, rect.y + rect.height / 2);
@@ -36,14 +38,14 @@ template <>
 void UI::Button::display<UI::Button::State::Hover>(sf::RenderWindow &window)
 {
     const auto &rect = layout.getRect();
-    background.setSize({rect.width, rect.height});
-    background.setOutlineColor(sf::Color::Black);
-    background.setOutlineThickness(10);
-    background.setPosition(rect.x, rect.y);
 
+    const auto &texture_rect = background.getTexture()->getSize();
+    background.setScale(rect.width / texture_rect.x,rect.height / texture_rect.y);
+    
+    background.setPosition(rect.x, rect.y + 5);
     window.draw(background);
 
-    text.setPosition(rect.x + rect.width / 2, rect.y + rect.height / 2);
+    text.setPosition(rect.x + rect.width / 2, rect.y + rect.height / 2 + 5);
     window.draw(text);
 }
 

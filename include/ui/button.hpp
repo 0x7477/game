@@ -30,7 +30,7 @@ namespace UI
         bool hover;
         bool was_clicked_last_frame;
         sf::Color background_color{sf::Color::Transparent};
-        sf::RectangleShape background;
+        sf::Sprite background;
         sf::Text text;
 
         Layout layout;
