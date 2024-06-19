@@ -42,6 +42,8 @@ public:
 
     template <ViewMode mode>
     void displayMode(sf::RenderWindow &window);
+    void beautifyMap();
+
 
     void display(sf::RenderWindow &window);
     void displayHeader(sf::RenderWindow &window);
@@ -56,6 +58,7 @@ public:
     const Tile &getTile(const TileIndex &index) const;
 
 
+    bool isInMap(const int& x,const int& y);
     void handleEvents();
 
     std::vector<TileIndex> getNeighbors(const TileIndex &index);

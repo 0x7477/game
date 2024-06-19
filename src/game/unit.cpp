@@ -14,7 +14,7 @@
 
 Unit::Unit(const Team &team, const Stats &stats, const std::source_location &location)
     : id{getClassName(location)},
-      stats{stats}, team{team}, movement_manager{*this}, ammo{stats.max_ammo}, health_text{image_resources.get("numbers/1.png")}
+      stats{stats}, team{team}, movement_manager{*this}, ammo{stats.max_ammo}, health_text{image_resources.get("numbers/1.png")}, ammo_animation{UI::GIF("misc/ammo/", "resources/images/")}
 {
     actions[Wait] = [this](Map &map, const TileIndex &me, const TileIndex &new_position, const TileIndex &, const unsigned &)
     { this->executeWaitAction(map, me, new_position); };
@@ -57,17 +57,22 @@ void Unit::display(sf::RenderWindow &window, Map &map, const TileIndex &index)
 
     displayAdditions(window, map, index);
     
+    const auto [x, y] = movement_manager.getCurrentPosition(map, index);
+    
+    if(stats.max_ammo > 0 && ammo <= 2)
+        ammo_animation.display(window,x+ 1.5 * map.scale, y + 4 * map.scale,map.scale * 0.3);
+    
     if (getUnitCount() == 10)
         return;
 
     const auto offset = map.scale * 3.0;
-    const auto [x, y] = movement_manager.getCurrentPosition(map, index);
-
     health_text.setPosition(x + 16 * map.scale, y + 16 * map.scale - offset);
     const auto size = health_text.getTexture()->getSize();
     health_text.setScale(8 * map.scale / size.x, 8 * map.scale / size.y);
     health_text.setTexture(image_resources.get("numbers/" + std::to_string(getUnitCount()) + ".png"));
     window.draw(health_text);
+
+
 
 }
 

@@ -147,6 +147,7 @@ public:
 
 protected:
     sf::Sprite health_text;
+    UI::GIF ammo_animation;
 };
 
 template <typename T>

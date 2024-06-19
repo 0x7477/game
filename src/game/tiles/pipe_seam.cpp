@@ -36,6 +36,9 @@ PipeSeamAttackInteraction pipe_seam_attack_interaction;
 
 namespace Tiles
 {
+    class PipeSeam;
+    void destroyPipe(Tiles::PipeSeam &pipe_seam);
+
     class PipeSeam : public Tile
     {
     public:
@@ -56,9 +59,16 @@ namespace Tiles
             return (damage * unit.getUnitCount()) / 10;
         }
 
-        void encodeAdditionalInfo(YAML::Node& node) const
+        void encodeAdditionalInfo(YAML::Node &node) const
         {
             node["health"] = health;
+        }
+
+        void decodeAdditionalInfo(const YAML::Node &node) override
+        {
+            health = node["health"].as<int>();
+            if (health <= 0)
+                destroyPipe(*this);
         }
 
         std::optional<int> getHealth() const override
@@ -68,7 +78,20 @@ namespace Tiles
 
         int health{99};
     };
+
+    void destroyPipe(Tiles::PipeSeam &pipe_seam)
+    {
+        pipe_seam.info.movement_costs = MovementCosts{{1, 1, 1, 2, 0, 0, 1, 0}};
+
+        if (pipe_seam.direction == Tile::V)
+            pipe_seam.setDirection(Tile::L);
+        else
+            pipe_seam.setDirection(Tile::U);
+    }
 }
+
+
+    
 
 bool PipeSeamAttackInteraction::isAttackable(Map &map, const TileIndex &index, const Unit &unit) const
 {
@@ -102,13 +125,7 @@ void PipeSeamAttackInteraction::attack(Map &map, const TileIndex &unit_tile, con
     if (pipe_seam.health > 0)
         return;
 
-    pipe_seam.info.movement_costs = MovementCosts{{1, 1, 1, 2, 0, 0, 1, 0}};
-
-    if (pipe_seam.direction == Tile::V)
-        pipe_seam.setDirection(Tile::L);
-    else
-        pipe_seam.setDirection(Tile::U);
-
+    destroyPipe(pipe_seam);
     map.animations.emplace_back(Animation{UI::GIF("misc/explosion/", "resources/images/"), 0.81, tile, 4, 8});
 }
 

@@ -9,12 +9,45 @@ Map::Map(Game &game, const std::string &data_string)
     : game{game}, cursor_sprite{gif_resources.get("unit_select.gif")},
       tiles{initTiles(data_string)}, width{(unsigned)tiles[0].size()}, height{(unsigned)tiles.size()}
 {
+    beautifyMap();
     beginTurn(team);
     setTeam(Red);
     resize();
 
     // (*this)[7, 0].unit = Unit::createUnit("Recon", Team::Red);
     // (*this)[6, 0].unit = Unit::createUnit("Tank", Team::Blue);
+}
+
+
+bool Map::isInMap(const int& x,const int& y)
+{
+    return x >= 0 && x < (int)width && y>= 0 && y < (int)height;
+}
+
+
+
+void Map::beautifyMap()
+{
+    for (unsigned y{0}; y < height; y++)
+    {
+        for (unsigned x{0}; x < width; x++)
+        {
+            
+            std::array<Tile*, 8> neighbours;
+            #define ADD(x,y) isInMap(x,y) ? &getTile({x,y}) : nullptr
+
+            neighbours[0] = ADD(x,  y-1);
+            neighbours[1] = ADD(x+1,y-1);
+            neighbours[2] = ADD(x+1,y);
+            neighbours[3] = ADD(x+1,y+1);
+            neighbours[4] = ADD(x,  y+1);
+            neighbours[5] = ADD(x-1,y+1);
+            neighbours[6] = ADD(x-1,y);
+            neighbours[7] = ADD(x-1,y-1);
+
+            getTile({x,y}).updateBasedByNeighbors(neighbours);
+        }
+    }
 }
 
 TileIndex Map::getHeadquarterPosition(const Team &team)
@@ -569,6 +602,8 @@ void Map::decode(const YAML::Node &node)
 
         if (tile.team != team)
             tile.setTeam(team);
+
+        tile.decodeAdditionalInfo(tile_node);
 
         if (!tile_node["unit"])
             continue;

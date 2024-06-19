@@ -47,8 +47,8 @@ struct ProduceUnit : public TilePlayerInteraction
 
 struct TileRoundBehaviour
 {
-    virtual void handleEndOfTurn(Map& , const TileIndex &){};
-    virtual void handleStartOfTurn(Map&, const TileIndex &){};
+    virtual void handleEndOfTurn(Map &, const TileIndex &) {};
+    virtual void handleStartOfTurn(Map &, const TileIndex &) {};
 };
 static NoTilePlayerInteraction default_tile_interaction;
 static TileAttackInteraction default_tile_attack_interaction;
@@ -56,14 +56,12 @@ static TileRoundBehaviour default_tile_round_behaviour;
 
 struct RepairUnits : TileRoundBehaviour
 {
-    virtual void handleStartOfTurn(Map& map, const TileIndex &tile_index);
+    virtual void handleStartOfTurn(Map &map, const TileIndex &tile_index);
 };
 
 class Tile
 {
 public:
-
-
     enum Direction
     {
         URDL,
@@ -89,7 +87,7 @@ public:
         MovementCosts movement_costs;
         TilePlayerInteraction &player_interaction = default_tile_interaction;
         TileAttackInteraction &tile_attack_interaction = default_tile_attack_interaction;
-        TileRoundBehaviour& tile_round_behaviour = default_tile_round_behaviour;
+        TileRoundBehaviour &tile_round_behaviour = default_tile_round_behaviour;
     };
 
     static std::string getClassName(const std::source_location &location = std::source_location::current());
@@ -99,12 +97,14 @@ public:
     void display(sf::RenderWindow &window, Map &map, const TileIndex &index);
     void displayUnit(sf::RenderWindow &window, Map &map, const TileIndex &index);
 
-
-    void encode(YAML::Node& node, const TileIndex& index) const;
-    virtual void encodeAdditionalInfo(YAML::Node& node) const;
+    void encode(YAML::Node &node, const TileIndex &index) const;
+    virtual void encodeAdditionalInfo(YAML::Node &node) const;
+    virtual void decodeAdditionalInfo(const YAML::Node &node);
     void setDisplayMode(const TileDisplayMode &new_display_mode);
 
     bool interact(Map &map, const TileIndex &tile);
+
+    virtual void updateBasedByNeighbors(std::array<Tile*, 8>& neighbors);
 
     void attack(Map &map, const TileIndex &unit, const TileIndex &tile);
 
@@ -138,6 +138,7 @@ public:
         return t; };
     }
 
+    void setTexture(const std::string &name);
     void setDirection(const Direction &direction_);
 
     unsigned getDefense() const;
@@ -146,9 +147,7 @@ public:
 
     std::string getId() const;
 
-    
-    void startRound(Map& map, const TileIndex& index);
-
+    void startRound(Map &map, const TileIndex &index);
 
     void setTeam(const Team &new_team);
     static std::unique_ptr<Tile> createTile(unsigned id);

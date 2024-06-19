@@ -19,7 +19,7 @@ int main(int, char **)
     network::NetworkManager manager{client};
 
     // std::ifstream ifs("maps/raw/astral_body.txt");
-    std::ifstream ifs("maps/raw/mewtwo.txt");
+    std::ifstream ifs("maps/raw/toil_ferry.txt");
     // std::ifstream ifs("maps/raw/just_plains.txt");
     const std::string map_data(std::istreambuf_iterator<char>{ifs}, {});
 
@@ -30,7 +30,7 @@ int main(int, char **)
     Scene::Menu menu{window_manager, manager, lobby};
 
     window_manager.scene = &menu;
-    // window_manager.scene = &map;
+    window_manager.scene = &map;
 
     window_manager.start();
     // Game game{manager};

@@ -128,6 +128,12 @@ unsigned Tile::getDefense() const
     return info.defense;
 }
 
+
+void Tile::setTexture(const std::string &name)
+{
+    sprite = UI::GIF("tiles/" + id + "/" + name + "/", "resources/images/");
+}
+
 void Tile::setDirection(const Direction &direction_)
 {
     direction = direction_;
@@ -173,11 +179,17 @@ std::string Tile::getClassName(const std::source_location &location)
 }
 
 
+void Tile::updateBasedByNeighbors(std::array<Tile*, 8>&)
+{}
+
+
 void Tile::encodeAdditionalInfo(YAML::Node&) const
 {
 
 }
 
+void Tile::decodeAdditionalInfo(const YAML::Node&)
+{}
 
 void Tile::encode(YAML::Node& node, const TileIndex& index) const
 {
