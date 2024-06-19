@@ -2,6 +2,7 @@
 #include <network/rpc.hpp>
 #include <game/unit.hpp>
 #include <game/game.hpp>
+#include <game/tile.hpp>
 
 Game *Game::game{nullptr};
 

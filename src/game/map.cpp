@@ -3,6 +3,8 @@
 #include <scenes/battle.hpp>
 #include <game/map_manipulator.hpp>
 #include <game/tile_selector.hpp>
+#include <game/tile.hpp>
+
 Map::Map(Game &game, const std::string &data_string)
     : game{game}, cursor_sprite{gif_resources.get("unit_select.gif")},
       tiles{initTiles(data_string)}, width{(unsigned)tiles[0].size()}, height{(unsigned)tiles.size()}
@@ -11,22 +13,24 @@ Map::Map(Game &game, const std::string &data_string)
     setTeam(Red);
     resize();
 
-    (*this)[7, 0].unit = Unit::createUnit("Recon", Team::Red);
-    (*this)[6, 0].unit = Unit::createUnit("Tank", Team::Blue);
+    // (*this)[7, 0].unit = Unit::createUnit("Recon", Team::Red);
+    // (*this)[6, 0].unit = Unit::createUnit("Tank", Team::Blue);
 }
 
-TileIndex Map::getHeadquarterPosition(const Team& team)
+TileIndex Map::getHeadquarterPosition(const Team &team)
 {
     for (unsigned y{0}; y < height; y++)
         for (unsigned x{0}; x < width; x++)
         {
-            const auto& tile = (*this)[{x, y}];
-            if(tile.team != team) continue;
-            if(tile.getId() != "Headquarter") continue;
-            return {x,y};
+            const auto &tile = (*this)[{x, y}];
+            if (tile.team != team)
+                continue;
+            if (tile.getId() != "Headquarter")
+                continue;
+            return {x, y};
         }
 
-    return {1,1};
+    return {1, 1};
 }
 template <>
 void Map::displayMode<ViewMode::Shopping>(sf::RenderWindow &window)
@@ -147,9 +151,6 @@ void Map::display(sf::RenderWindow &window)
 
     else if (mode == SelectTarget)
         displayMode<SelectTarget>(window);
-
-
-
 }
 
 void Map::win(const Team &winner_team)
@@ -241,6 +242,11 @@ Tile &Map::getTile(const TileIndex &index)
     return (*this)[index];
 }
 
+const Tile &Map::getTile(const TileIndex &index) const
+{
+    return *tiles[index.y][index.x];
+}
+
 void Map::handleMenu()
 {
 
@@ -304,7 +310,7 @@ void Map::handleEvents()
                 {
                     clearTileEffects();
                     const auto tiles = MovementSelector::getTiles(*this, cursor, *tile.unit, true);
-                    setMovementTileMode(tiles, Tile::DisplayMode::Move);
+                    setMovementTileMode(tiles, TileDisplayMode::Move);
                     show_enemy_tiles = true;
                 }
             }
@@ -328,7 +334,7 @@ void Map::handleEvents()
         if (!selected_unit && getCursorTile().unit)
         {
             const auto tiles = AttackableSelector::getTiles(*this, cursor, *getCursorTile().unit);
-            setMovementTileMode(tiles, Tile::DisplayMode::Attack);
+            setMovementTileMode(tiles, TileDisplayMode::Attack);
             show_enemy_tiles = true;
         }
         selected_unit = {};
@@ -381,6 +387,15 @@ void Map::moveMapToContain(const TileIndex &index)
 
 void Map::moveCursor()
 {
+    if (WindowManager::getKeyDown(sf::Keyboard::S))
+    {
+        encode();
+    }
+    if (WindowManager::getKeyDown(sf::Keyboard::L))
+    {
+        decode(YAML::LoadFile("save.yaml"));
+    }
+
     auto &[cursor_x, cursor_y] = cursor;
     bool button_was_pressed{false};
     if (WindowManager::getKey(sf::Keyboard::Left) && !WindowManager::getKey(sf::Keyboard::Right))
@@ -440,10 +455,10 @@ void Map::clearTileEffects()
 {
     for (unsigned y{0}; y < tiles.size(); y++)
         for (unsigned x{0}; x < tiles[y].size(); x++)
-            (*this)[{x, y}].setDisplayMode(Tile::DisplayMode::Normal);
+            (*this)[{x, y}].setDisplayMode(TileDisplayMode::Normal);
 }
 
-void Map::setMovementTileMode(const std::vector<TileIndex> &indices, const Tile::DisplayMode &mode)
+void Map::setMovementTileMode(const std::vector<TileIndex> &indices, const TileDisplayMode &mode)
 {
     for (const auto &index : indices)
         getTile(index).setDisplayMode(mode);
@@ -505,11 +520,72 @@ void Map::drawMap(sf::RenderWindow &window)
     drawAnimations(window);
 }
 
-void Map::setTeam(const Team& team_)
+void Map::setTeam(const Team &team_)
 {
     team = team_;
     cursor = getHeadquarterPosition(team);
     resize();
+}
+
+void Map::encode() const
+{
+    YAML::Node node;
+
+    // std::ostream& stream = std::cout;
+
+    node["info"]["current_active_player"] = (int)game.current_active_player;
+    node["info"]["players"]["1"]["name"] = game.players[Red].name;
+    node["info"]["players"]["1"]["money"] = game.players[Red].money;
+    node["info"]["players"]["2"]["name"] = game.players[Blue].name;
+    node["info"]["players"]["2"]["money"] = game.players[Blue].money;
+
+    YAML::Node tiles;
+    for (unsigned y{0}; y < height; y++)
+        for (unsigned x{0}; x < width; x++)
+            getTile({x, y}).encode(tiles, {x, y});
+
+    node["tiles"] = tiles;
+
+    std::ofstream file("save.yaml");
+    file << node;
+}
+
+void Map::decode(const YAML::Node &node)
+{
+    game.current_active_player = (Team)node["info"]["current_active_player"].as<int>();
+    game.players[Red].name = node["info"]["players"]["1"]["name"].as<std::string>();
+    game.players[Red].money = node["info"]["players"]["1"]["money"].as<unsigned>();
+    game.players[Blue].name = node["info"]["players"]["2"]["name"].as<std::string>();
+    game.players[Blue].money = node["info"]["players"]["2"]["money"].as<unsigned>();
+
+    for (const auto &tile_node : node["tiles"])
+    {
+        const auto x = tile_node["chords"]["x"].as<unsigned>();
+        const auto y = tile_node["chords"]["y"].as<unsigned>();
+
+        auto &tile = getTile({x, y});
+        TileIndex pos{x, y};
+        const auto team = (Team)tile_node["team"].as<unsigned>();
+
+        if (tile.team != team)
+            tile.setTeam(team);
+
+        if (!tile_node["unit"])
+            continue;
+
+        const auto unit_id = tile_node["unit"]["id"].as<std::string>();
+        const auto unit_health = tile_node["unit"]["health"].as<int>();
+        const auto unit_team = (Team)tile_node["unit"]["team"].as<unsigned>();
+        const auto unit_finished = tile_node["unit"]["finished"].as<bool>();
+        const auto unit_ammo = tile_node["unit"]["ammo"].as<unsigned>();
+
+        auto unit = Unit::createUnit(unit_id, unit_team);
+        unit->ammo = unit_ammo;
+        unit->heal(*this, pos, unit_health - 100);
+        unit->setFinished(unit_finished);
+
+        tile.unit = unit;
+    }
 }
 
 void Map::beginTurn(const Team &begin_turn_team)
@@ -524,7 +600,7 @@ void Map::beginTurn(const Team &begin_turn_team)
                 tile.unit->startRound(*this, {x, y});
         }
 
-    if(team == begin_turn_team)
+    if (team == begin_turn_team)
         turn_notification.notify();
 }
 

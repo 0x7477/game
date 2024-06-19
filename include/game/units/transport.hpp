@@ -2,6 +2,8 @@
 #include <game/map.hpp>
 #include <game/game.hpp>
 #include <game/tile_selector.hpp>
+#include <game/tile.hpp>
+
 namespace Units
 {
 
@@ -84,7 +86,7 @@ namespace Units
         void unloadUnit(Map &map, const TileIndex &me, const TileIndex &target, const unsigned &index)
         {
             const auto possible_unload_tiles = UnloadSelector::getTiles(map, target, *loaded_units[index]);
-            map.setMovementTileMode(possible_unload_tiles, Tile::DisplayMode::Move);
+            map.setMovementTileMode(possible_unload_tiles, TileDisplayMode::Move);
             map.mode = SelectTarget;
             map.selectable_targets = possible_unload_tiles;
 

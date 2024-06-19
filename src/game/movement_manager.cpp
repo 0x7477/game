@@ -2,6 +2,7 @@
 #include <game/movement.hpp>
 #include <game/map.hpp>
 #include <game/tile_selector.hpp>
+#include <game/tile.hpp>
 #include <cmath>
 MovementManager::MovementManager(const Unit &unit)
     : unit{unit}, 

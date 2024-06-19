@@ -149,7 +149,7 @@ bool Tile::interact(Map &map, const TileIndex &tile)
     return info.player_interaction.interact(map, tile);
 }
 
-void Tile::setDisplayMode(const DisplayMode &new_display_mode)
+void Tile::setDisplayMode(const TileDisplayMode &new_display_mode)
 {
     display_mode = new_display_mode;
 }
@@ -170,4 +170,32 @@ std::string Tile::getClassName(const std::source_location &location)
         return function_name.substr(7, function_name.find(':', 8) - 7);
 
     return function_name.substr(start, end - start);
+}
+
+
+void Tile::encodeAdditionalInfo(YAML::Node&) const
+{
+
+}
+
+
+void Tile::encode(YAML::Node& node, const TileIndex& index) const
+{
+    YAML::Node info;
+
+    info["chords"]["x"] = index.x;
+    info["chords"]["y"] = index.y;
+    info["team"] = (int)team;
+    encodeAdditionalInfo(info);
+
+    if(unit)
+    {
+        info["unit"]["id"]=unit->id;
+        info["unit"]["health"]=unit->getHealth();
+        info["unit"]["team"]=(int)unit->getTeam();
+        info["unit"]["finished"]=unit->status.finished;
+        info["unit"]["ammo"]=unit->ammo;
+    }
+
+    node.push_back(info);
 }

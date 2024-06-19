@@ -1,6 +1,7 @@
 #include <game/attack_simulator.hpp>
 #include <game/map.hpp>
 #include <game/unit.hpp>
+#include <game/tile.hpp>
 #include <cmath>
 
 bool AttackSimulator::canAttack(const Unit &attacker, const Unit &defender)

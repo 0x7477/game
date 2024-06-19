@@ -2,6 +2,8 @@
 #include <game/map.hpp>
 #include <game/game.hpp>
 #include <game/map.hpp>
+#include <game/tile.hpp>
+
 namespace Units
 {
     class Trooper : public Unit

@@ -10,6 +10,7 @@
 #include <game/tile_selector.hpp>
 #include <game/attack_simulator.hpp>
 #include <scenes/battle.hpp>
+#include <game/tile.hpp>
 
 Unit::Unit(const Team &team, const Stats &stats, const std::source_location &location)
     : id{getClassName(location)},
@@ -165,7 +166,7 @@ void Unit::displayMovementTiles(Map &map, const TileIndex &index)
     const auto possible_movement_tiles = MovementSelector::getTiles(map, index, *this, true);
 
     for (const auto &tile_index : possible_movement_tiles)
-        map[tile_index].setDisplayMode(Tile::Move);
+        map[tile_index].setDisplayMode(Move);
 }
 
 bool Unit::select(Map &map, const TileIndex &index)
@@ -269,7 +270,7 @@ void Unit::act(Map &map, const TileIndex &me, const TileIndex &target)
                 options.push_back("Attack");
                 actions["Attack"] = [=, this, &map](const unsigned &)
                 {
-                    map.setMovementTileMode(possible_attack_tiles, Tile::DisplayMode::Attack);
+                    map.setMovementTileMode(possible_attack_tiles, TileDisplayMode::Attack);
                     map.mode = SelectTarget;
                     map.selectable_targets = possible_attack_tiles;
 

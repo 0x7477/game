@@ -10,6 +10,8 @@
 #include <game/teams.hpp>
 #include <game/unit.hpp>
 #include <game/visualization_mode.hpp>
+#include <game/tile_display_mode.hpp>
+#include <yaml-cpp/yaml.h>
 class Player;
 class Map;
 class Tile;
@@ -60,12 +62,7 @@ struct RepairUnits : TileRoundBehaviour
 class Tile
 {
 public:
-    enum DisplayMode
-    {
-        Normal,
-        Move,
-        Attack
-    };
+
 
     enum Direction
     {
@@ -102,7 +99,10 @@ public:
     void display(sf::RenderWindow &window, Map &map, const TileIndex &index);
     void displayUnit(sf::RenderWindow &window, Map &map, const TileIndex &index);
 
-    void setDisplayMode(const DisplayMode &new_display_mode);
+
+    void encode(YAML::Node& node, const TileIndex& index) const;
+    virtual void encodeAdditionalInfo(YAML::Node& node) const;
+    void setDisplayMode(const TileDisplayMode &new_display_mode);
 
     bool interact(Map &map, const TileIndex &tile);
 
@@ -157,7 +157,7 @@ public:
 
 protected:
     std::string id;
-    DisplayMode display_mode{Normal};
+    TileDisplayMode display_mode{Normal};
     // TileUnitInteraction &unit_interaction;
     // TileRoundBehaviour &round_behaviour;
 

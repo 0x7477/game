@@ -56,6 +56,11 @@ namespace Tiles
             return (damage * unit.getUnitCount()) / 10;
         }
 
+        void encodeAdditionalInfo(YAML::Node& node) const
+        {
+            node["health"] = health;
+        }
+
         std::optional<int> getHealth() const override
         {
             return health;

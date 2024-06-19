@@ -5,7 +5,6 @@
 #include <vector>
 #include <SFML/Graphics.hpp>
 #include <helper/resource_loader.hpp>
-#include <game/tile.hpp>
 #include <cassert>
 #include <engine/window_manager.hpp>
 #include <helper/delta_timer.hpp>
@@ -21,7 +20,10 @@
 #include <helper/delta_timer.hpp>
 #include <ui/attack_info.hpp>
 #include <ui/turn_notification.hpp>
-
+#include <game/tile_display_mode.hpp>
+#include <game/tile.hpp>
+#include <sstream>
+#include <yaml-cpp/yaml.h>
 class Game;
 class Unit;
 
@@ -51,6 +53,8 @@ public:
     Tile &getCursorTile();
 
     Tile &getTile(const TileIndex &index);
+    const Tile &getTile(const TileIndex &index) const;
+
 
     void handleEvents();
 
@@ -82,8 +86,10 @@ public:
     std::shared_ptr<Unit> createUnit(const std::string &id, const Team &team_id, Tile &tile);
 
     void clearTileEffects();
+    void encode() const;
+    void decode(const YAML::Node& node);
 
-    void setMovementTileMode(const std::vector<TileIndex> &indices, const Tile::DisplayMode &mode);
+    void setMovementTileMode(const std::vector<TileIndex> &indices, const TileDisplayMode &mode);
 
     std::tuple<float, float> getScreenPosition(const TileIndex &index) const;
 
